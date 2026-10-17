@@ -132,7 +132,6 @@ private enum DDC {
 
     private static let chipAddress: UInt32 = 0x37
     private static let dataAddress: UInt32 = 0x51
-    private static let brightnessCode: UInt8 = 0x10
 
     /// The IORegistry path of the display's framebuffer, as CoreDisplay reports it.
     static func displayLocation(_ id: CGDirectDisplayID) -> String? {
@@ -182,42 +181,66 @@ private enum DDC {
     static func readBrightness(_ service: CFTypeRef) -> Double? {
         guard let readI2C, let writeI2C else { return nil }
         for _ in 0..<3 {
-            var request: [UInt8] = [0x82, 0x01, brightnessCode]
-            request.append(checksum(request, start: 0x6E ^ UInt8(dataAddress)))
+            var request = DDCMessage.getBrightnessRequest()
             guard writeI2C(service, chipAddress, dataAddress, &request, UInt32(request.count)) == kIOReturnSuccess
             else { continue }
-            usleep(50_000) // monitors need a moment before the reply is ready
+            usleep(50_000) // DDC/CI asks hosts to wait at least 40 ms before reading the reply
 
             var reply = [UInt8](repeating: 0, count: 12)
             guard readI2C(service, chipAddress, dataAddress, &reply, UInt32(reply.count)) == kIOReturnSuccess
             else { continue }
-            // 0x6E, length, 0x02 (reply), result, code, type, max hi/lo, current hi/lo, checksum
-            // Some monitors get the checksum wrong, so check the reply's shape instead.
-            guard reply[2] == 0x02, reply[3] == 0x00, reply[4] == brightnessCode else { continue }
-            let maximum = Int(reply[6]) << 8 | Int(reply[7])
-            let current = Int(reply[8]) << 8 | Int(reply[9])
-            guard maximum > 0 else { return nil }
-            return min(Double(current) / Double(maximum), 1)
+            guard let level = DDCMessage.brightness(fromReply: reply) else { continue }
+            return level
         }
         return nil
     }
 
-    /// Brightness is written on the monitor's usual 0–100 scale.
     static func writeBrightness(_ service: CFTypeRef, _ level: Double) -> Bool {
         guard let writeI2C else { return false }
-        let value = UInt16((level * 100).rounded())
-        var request: [UInt8] = [0x84, 0x03, brightnessCode, UInt8(value >> 8), UInt8(value & 0xFF)]
-        request.append(checksum(request, start: 0x6E ^ UInt8(dataAddress)))
+        var request = DDCMessage.setBrightnessRequest(level)
         for _ in 0..<2 {
             if writeI2C(service, chipAddress, dataAddress, &request, UInt32(request.count)) == kIOReturnSuccess {
                 return true
             }
-            usleep(20_000)
+            usleep(50_000)
         }
         return false
     }
+}
 
-    private static func checksum(_ bytes: [UInt8], start: UInt8) -> UInt8 {
-        bytes.reduce(start, ^)
+/// DDC/CI messages for the brightness control (VESA MCCS VCP code 0x10), kept
+/// apart from the I/O so they can be tested. The I2C layer adds the monitor's
+/// address (0x6E) and the source address (0x51), and both count toward the
+/// checksum, which is the XOR of every byte before it.
+enum DDCMessage {
+    static let brightnessCode: UInt8 = 0x10
+    private static let destinationAddress: UInt8 = 0x6E
+    private static let sourceAddress: UInt8 = 0x51
+
+    /// "Get VCP Feature" for brightness.
+    static func getBrightnessRequest() -> [UInt8] {
+        withChecksum([0x82, 0x01, brightnessCode])
+    }
+
+    /// "Set VCP Feature" for brightness, on the monitor's usual 0–100 scale.
+    static func setBrightnessRequest(_ level: Double) -> [UInt8] {
+        let value = UInt16((min(max(level, 0), 1) * 100).rounded())
+        return withChecksum([0x84, 0x03, brightnessCode, UInt8(value >> 8), UInt8(value & 0xFF)])
+    }
+
+    /// Brightness from 0 to 1 from a "Get VCP Feature" reply: source address,
+    /// length, 0x02 (reply), result (0 = ok), VCP code, type, maximum (2 bytes),
+    /// current value (2 bytes), checksum. Some monitors send a wrong checksum,
+    /// so the reply's shape is checked instead.
+    static func brightness(fromReply reply: [UInt8]) -> Double? {
+        guard reply.count >= 10, reply[2] == 0x02, reply[3] == 0x00, reply[4] == brightnessCode else { return nil }
+        let maximum = Int(reply[6]) << 8 | Int(reply[7])
+        let current = Int(reply[8]) << 8 | Int(reply[9])
+        guard maximum > 0 else { return nil }
+        return min(Double(current) / Double(maximum), 1)
+    }
+
+    private static func withChecksum(_ body: [UInt8]) -> [UInt8] {
+        body + [body.reduce(destinationAddress ^ sourceAddress, ^)]
     }
 }
