@@ -66,6 +66,8 @@ struct HelpView: View {
             VStack(alignment: .leading, spacing: 18) {
                 section("Turn a display off or on",
                         "Click its name in the menu. macOS forgets the display as if you unplugged it, but the cable stays in, so it can keep charging and powering its USB hub.")
+                section("Brightness",
+                        "Each display that supports it has a brightness control: a submenu in the menu bar, and a slider in the window. Monitors that don't answer brightness commands don't show one. Turn on Options > Brightness Keys for External Displays to use the keyboard's brightness keys on the screen under the pointer.")
                 section("Built-in screen and keyboard backlight",
                         "On a MacBook, the built-in screen has its own section. You can turn the keyboard backlight off by itself, or have it go off with the screen and come back with it.")
                 section("Keyboard shortcuts",

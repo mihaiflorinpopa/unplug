@@ -12,6 +12,7 @@ commands:
   toggle <display>             Disconnect if connected, otherwise reconnect
   forget <display>             Stop remembering a disconnected display that was
                                unplugged and can't be reconnected
+  brightness <display> [0-100] Print a display's brightness, or set it in percent
   keyboard [on|off|toggle]     Turn the MacBook keyboard backlight on or off (no
                                argument prints its state)
 
@@ -45,9 +46,13 @@ guard let command = positional.first else {
 }
 
 func target() -> Display {
-    guard positional.count >= 2 else { fail("\(command) needs a display. Run `unplug list`.") }
+    target(positional.dropFirst())
+}
+
+func target(_ words: ArraySlice<String>) -> Display {
+    guard !words.isEmpty else { fail("\(command) needs a display. Run `unplug list`.") }
     do {
-        return try manager.resolve(positional.dropFirst().joined(separator: " "))
+        return try manager.resolve(words.joined(separator: " "))
     } catch {
         fail(error.localizedDescription)
     }
@@ -106,6 +111,25 @@ case "forget":
     guard !d.isConnected else { fail("\(d.name) is connected; only disconnected displays can be forgotten.") }
     manager.forget(d)
     print("Forgot \(d.name).")
+
+case "brightness":
+    // The last word is the new level when it's a number and a display is named before it.
+    var words = positional.dropFirst()
+    var level: Int?
+    if words.count >= 2, let last = words.last, let value = Int(last.trimmingCharacters(in: CharacterSet(charactersIn: "%"))) {
+        guard (0...100).contains(value) else { fail("brightness must be between 0 and 100.") }
+        level = value
+        words = words.dropLast()
+    }
+    let d = target(words)
+    let brightness = Brightness()
+    if let level {
+        guard brightness.set(d, Double(level) / 100) else { fail("\(d.name) doesn't support brightness control.") }
+        print("\(d.name) brightness \(level)%.")
+    } else {
+        guard let current = brightness.get(d) else { fail("\(d.name) doesn't support brightness control.") }
+        print("\(Int((current * 100).rounded()))%")
+    }
 
 case "keyboard", "kbd":
     guard KeyboardBacklight.isAvailable else { fail("this Mac has no keyboard backlight Unplug can control.") }
