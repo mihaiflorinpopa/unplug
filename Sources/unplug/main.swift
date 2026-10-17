@@ -18,6 +18,7 @@ commands:
 options:
   --force                      Allow disconnecting the last active display
   --json                       (list) Print JSON instead of a table
+  --version                    Print the version
 """
 
 func fail(_ message: String) -> Never {
@@ -30,6 +31,11 @@ let flags = Set(args.filter { $0.hasPrefix("--") })
 let positional = args.filter { !$0.hasPrefix("--") }
 let force = flags.contains("--force")
 let manager = DisplayManager()
+
+if flags.contains("--version") || positional.first == "version" {
+    print("unplug \(UnplugVersion.current)")
+    exit(0)
+}
 
 guard let command = positional.first else {
     print(usage)
