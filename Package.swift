@@ -13,5 +13,6 @@ let package = Package(
         .target(name: "UnplugCore"),
         .executableTarget(name: "unplug", dependencies: ["UnplugCore"]),
         .executableTarget(name: "UnplugApp", dependencies: ["UnplugCore"]),
+        .testTarget(name: "UnplugCoreTests", dependencies: ["UnplugCore"]),
     ]
 )
