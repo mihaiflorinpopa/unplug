@@ -1,0 +1,16 @@
+import Foundation
+
+/// Preferences shared by the menu bar app and the CLI. The app's own defaults
+/// domain is its bundle identifier, so the CLI reads the same suite.
+public enum UnplugSettings {
+    static let domain = "io.github.mihaiflorinpopa.unplug"
+    static let defaults = UserDefaults(suiteName: domain) ?? .standard
+
+    public static let keyboardBacklightKey = "keyboardBacklightFollowsBuiltin"
+
+    /// Turn the keyboard backlight off while the built-in display is disconnected.
+    public static var keyboardBacklightFollowsBuiltin: Bool {
+        get { defaults.object(forKey: keyboardBacklightKey) as? Bool ?? true }
+        set { defaults.set(newValue, forKey: keyboardBacklightKey) }
+    }
+}

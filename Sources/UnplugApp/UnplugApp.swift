@@ -65,6 +65,14 @@ final class DisplaysModel: ObservableObject {
         refresh()
     }
 
+    var keyboardBacklightFollowsBuiltin: Bool {
+        get { UnplugSettings.keyboardBacklightFollowsBuiltin }
+        set {
+            UnplugSettings.keyboardBacklightFollowsBuiltin = newValue
+            objectWillChange.send()
+        }
+    }
+
     var launchAtLogin: Bool {
         get { SMAppService.mainApp.status == .enabled }
         set {
@@ -91,6 +99,10 @@ struct MenuContent: View {
                 get: { display.isConnected },
                 set: { model.setConnected(display, $0) }
             ))
+            if display.isBuiltin {
+                // Sits right under the built-in display it applies to.
+                Toggle("    Keyboard Light Off Too", isOn: $model.keyboardBacklightFollowsBuiltin)
+            }
         }
 
         if model.displays.contains(where: { !$0.isConnected }) {
