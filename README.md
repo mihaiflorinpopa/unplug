@@ -27,13 +27,27 @@ The private call lives in one file, [`Sources/UnplugCore/SkyLight.swift`](Source
 
 ## Install
 
-Build from source on a Mac with Xcode or the Swift toolchain:
+Download `Unplug-<version>.dmg` from [Releases](../../releases), open it, and drag Unplug into Applications.
+
+Unplug isn't notarized by Apple yet, so the first launch is blocked. Right-click Unplug in Applications and choose Open, or run:
 
 ```sh
-./scripts/build-app.sh
-cp -R build/Unplug.app /Applications/
+xattr -dr com.apple.quarantine /Applications/Unplug.app
+```
+
+To use the command line tool, link it onto your PATH:
+
+```sh
 sudo ln -sf /Applications/Unplug.app/Contents/Helpers/unplug /usr/local/bin/unplug
 ```
+
+### Build from source
+
+```sh
+./scripts/build-dmg.sh   # builds build/Unplug.app and build/Unplug-<version>.dmg
+```
+
+To publish a release, push a tag such as `v0.1.0`; CI builds the disk image and attaches it to a GitHub release.
 
 ## Command line
 
