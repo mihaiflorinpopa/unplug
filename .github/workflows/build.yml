@@ -24,7 +24,7 @@ jobs:
           ./build/Unplug.app/Contents/Helpers/unplug help
           test "$(./build/Unplug.app/Contents/Helpers/unplug --version)" = "unplug $(cat VERSION)"
           ./build/Unplug.app/Contents/Helpers/unplug list || true
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: Unplug-dmg
           path: build/Unplug-*.dmg
