@@ -90,6 +90,9 @@ public final class DisplayManager {
             store.forget(uuid: display.uuid)
             throw error
         }
+        if display.isBuiltin && UnplugSettings.keyboardBacklightFollowsBuiltin {
+            KeyboardBacklight.turnOff()
+        }
     }
 
     public func connect(_ display: Display) throws {
@@ -97,6 +100,10 @@ public final class DisplayManager {
         guard !display.isConnected else { throw UnplugError.alreadyConnected(display.name) }
         try Self.transaction { SkyLight.configure($0, display: display.displayID, enabled: true) }
         store.forget(uuid: display.uuid)
+        if display.isBuiltin {
+            // Only acts if a disconnect saved the backlight state earlier.
+            KeyboardBacklight.restore()
+        }
     }
 
     public func toggle(_ display: Display, force: Bool = false) throws {

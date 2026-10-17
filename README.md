@@ -19,6 +19,14 @@ A disconnected display drops out of every display list, so Unplug remembers the 
 
 The private call lives in one file, [`Sources/UnplugCore/SkyLight.swift`](Sources/UnplugCore/SkyLight.swift), so it is easy to audit and to fix if Apple changes it. Because of it, Unplug can't ship on the Mac App Store.
 
+### Keyboard backlight
+
+When you disconnect a MacBook's built-in display, Unplug also turns the keyboard backlight off, and puts it back (including auto-brightness) when the display is reconnected. This uses the private `KeyboardBrightnessClient` class from CoreBrightness, isolated in [`KeyboardBacklight.swift`](Sources/UnplugCore/KeyboardBacklight.swift). Turn it off from the menu, or with:
+
+```sh
+defaults write io.github.mihaiflorinpopa.unplug keyboardBacklightFollowsBuiltin -bool false
+```
+
 ### Safety
 
 - Unplug refuses to disconnect the last active display unless you pass `--force`.
