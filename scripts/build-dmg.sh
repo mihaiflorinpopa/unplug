@@ -1,12 +1,12 @@
 #!/bin/sh
-# Builds Unplug.app, then packages it as build/Unplug.dmg with an Applications
+# Builds Unplug.app, then packages it as build/Unplug-<version>.dmg with an Applications
 # shortcut so it installs by drag and drop.
 set -eu
 cd "$(dirname "$0")/.."
 
 ./scripts/build-app.sh
 
-VERSION="$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' Resources/Info.plist)"
+VERSION="$(tr -d '[:space:]' < VERSION)"
 STAGING=build/dmg
 DMG=build/Unplug-$VERSION.dmg
 

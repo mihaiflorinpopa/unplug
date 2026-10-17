@@ -57,7 +57,11 @@ sudo ln -sf /Applications/Unplug.app/Contents/Helpers/unplug /usr/local/bin/unpl
 ./scripts/build-dmg.sh   # builds build/Unplug.app and build/Unplug-<version>.dmg
 ```
 
-To publish a release, push a tag such as `v0.1.0`; CI builds the disk image and attaches it to a GitHub release.
+### Versions and releases
+
+The version lives in the [`VERSION`](VERSION) file and is stamped into the app, the CLI (`unplug --version`), the menu and the disk image name. The build number is the commit count.
+
+To release, bump `VERSION` in a pull request. When it merges, CI tags `v<version>` and publishes a GitHub release with `Unplug-<version>.dmg` attached. Pushes to main that don't change the version don't create a release.
 
 ## Command line
 

@@ -139,6 +139,7 @@ struct MenuContent: View {
         Toggle("Reconnect Displays on Quit", isOn: $model.reconnectOnQuit)
         Toggle("Launch at Login", isOn: $model.launchAtLogin)
         Divider()
+        Text("Unplug \(UnplugVersion.current)")
         Button("Quit Unplug") { NSApp.terminate(nil) }
             .keyboardShortcut("q")
     }
