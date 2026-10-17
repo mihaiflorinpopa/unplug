@@ -12,6 +12,8 @@ jobs:
     # Branches in this repo build on push; pull requests only add a build for forks.
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: macos-latest
+    env:
+      HAS_SPARKLE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY != '' }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -27,6 +29,19 @@ jobs:
           ./build/Unplug.app/Contents/Helpers/unplug help
           test "$(./build/Unplug.app/Contents/Helpers/unplug --version)" = "unplug $(cat VERSION)"
           ./build/Unplug.app/Contents/Helpers/unplug list || true
+      - name: Smoke-test app launch
+        run: |
+          test -d build/Unplug.app/Contents/Frameworks/Sparkle.framework
+          find .build/artifacts -type f -name sign_update | grep -q .
+          ./build/Unplug.app/Contents/MacOS/Unplug & PID=$!
+          sleep 5
+          kill -0 "$PID" # still running, so Sparkle and the app loaded
+          kill "$PID"
+      - name: Sign update and write appcast
+        if: env.HAS_SPARKLE_KEY == 'true'
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: ./scripts/make-appcast.sh
       - uses: actions/upload-artifact@v6
         with:
           name: Unplug-dmg
@@ -41,5 +56,6 @@ jobs:
           if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
             echo "$TAG already released"
           else
-            gh release create "$TAG" build/Unplug-*.dmg --target "$GITHUB_SHA" --title "Unplug $TAG" --generate-notes
+            # appcast.xml is the update feed; it exists once the Sparkle key secret is set.
+            gh release create "$TAG" build/Unplug-*.dmg $(ls build/appcast.xml 2>/dev/null) --target "$GITHUB_SHA" --title "Unplug $TAG" --generate-notes
           fi

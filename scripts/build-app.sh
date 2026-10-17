@@ -33,6 +33,20 @@ cp "$BIN/UnplugApp" "$APP/Contents/MacOS/Unplug"
 # Helpers/, not MacOS/: "unplug" and "Unplug" collide on case-insensitive volumes.
 cp "$BIN/unplug" "$APP/Contents/Helpers/unplug"
 
+# Sparkle (auto-updates) is a binary framework the app loads from Frameworks/.
+mkdir -p "$APP/Contents/Frameworks"
+SPARKLE="$BIN/Sparkle.framework"
+if [ ! -d "$SPARKLE" ]; then
+    SPARKLE="$(find .build/artifacts -type d -path '*Sparkle.xcframework/macos-*/Sparkle.framework' | head -1)"
+fi
+ditto "$SPARKLE" "$APP/Contents/Frameworks/Sparkle.framework"
+
+# Updates are verified with this public key. Without it the updater stays off.
+if [ -s Resources/sparkle-public-key.txt ]; then
+    /usr/libexec/PlistBuddy -c "Add :SUPublicEDKey string $(tr -d '[:space:]' < Resources/sparkle-public-key.txt)" \
+        "$APP/Contents/Info.plist"
+fi
+
 # Ad-hoc signature so macOS will launch a locally built app.
 codesign --force --deep --sign - "$APP"
 
