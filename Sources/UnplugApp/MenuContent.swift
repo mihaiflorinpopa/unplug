@@ -96,7 +96,6 @@ struct MenuContent: View {
         Menu("Options") {
             Toggle("Reconnect Displays on Quit", isOn: $model.reconnectOnQuit)
             Toggle("Keyboard Shortcuts (⌃⌥⌘U, ⌃⌥⌘B)", isOn: $model.shortcutsEnabled)
-            Toggle("Brightness Keys for External Displays", isOn: $model.brightnessKeysEnabled)
             Toggle("Launch at Login", isOn: $model.launchAtLogin)
             Divider()
             Toggle("Show in Dock", isOn: $model.showInDock)
