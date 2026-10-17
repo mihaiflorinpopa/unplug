@@ -34,10 +34,19 @@ final class DisplaysModel: ObservableObject {
     /// a menu bar–only app and a regular app with a Dock icon and a window.
     var onShowInDockChange: ((Bool) -> Void)?
 
+    /// Displays still to turn off again after a restart. Some monitors come
+    /// online a moment after login, so this is retried on each display change.
+    private var pendingTurnOff: Set<String> = []
+
     init() {
+        if UnplugSettings.keepOffAfterRestart {
+            pendingTurnOff = UnplugSettings.turnedOff
+            turnOffPending()
+        }
         refresh()
         monitor = DisplayMonitor { [weak self] in
             Task { @MainActor in
+                self?.turnOffPending()
                 self?.brightnessControl.reset()
                 self?.refresh()
             }
@@ -99,6 +108,12 @@ final class DisplaysModel: ObservableObject {
                 self.sendPendingBrightness()
             }
         }
+    }
+
+    private func turnOffPending() {
+        // Turning a display back on in the meantime (CLI included) cancels it.
+        pendingTurnOff.formIntersection(UnplugSettings.turnedOff)
+        pendingTurnOff = pendingTurnOff.filter { !manager.turnOffAgain(uuid: $0) }
     }
 
     func setConnected(_ display: Display, _ connected: Bool) {
@@ -193,6 +208,17 @@ final class DisplaysModel: ObservableObject {
             UserDefaults.standard.set(newValue, forKey: Self.showInDockKey)
             if !newValue && !showInMenuBar { showInMenuBar = true }
             onShowInDockChange?(newValue)
+            objectWillChange.send()
+        }
+    }
+
+    /// Turns displays the user left off back off when Unplug starts. Needs
+    /// Unplug to open at login, so turning it on also turns that on.
+    var keepOffAfterRestart: Bool {
+        get { UnplugSettings.keepOffAfterRestart }
+        set {
+            UnplugSettings.keepOffAfterRestart = newValue
+            if newValue && !launchAtLogin { launchAtLogin = true }
             objectWillChange.send()
         }
     }

@@ -14,6 +14,21 @@ public enum UnplugSettings {
         set { defaults.set(newValue, forKey: keyboardBacklightKey) }
     }
 
+    public static let keepOffAfterRestartKey = "keepOffAfterRestart"
+
+    /// Turn displays the user left off back off when Unplug starts, since
+    /// changes only last until logout.
+    public static var keepOffAfterRestart: Bool {
+        get { defaults.bool(forKey: keepOffAfterRestartKey) }
+        set { defaults.set(newValue, forKey: keepOffAfterRestartKey) }
+    }
+
+    /// UUIDs of the displays the user turned off and hasn't turned back on.
+    public static var turnedOff: Set<String> {
+        get { Set(defaults.stringArray(forKey: "turnedOff") ?? []) }
+        set { defaults.set(newValue.sorted(), forKey: "turnedOff") }
+    }
+
     /// The user turned the keyboard backlight off themselves, so reconnecting the
     /// built-in display must not switch it back on.
     static var keyboardBacklightOffByUser: Bool {

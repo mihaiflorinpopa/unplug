@@ -56,7 +56,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         if UserDefaults.standard.object(forKey: DisplaysModel.reconnectOnQuitKey) as? Bool ?? true {
-            DisplayManager().connectAll()
+            // Keep the user's choices, so "Keep Displays Off After Restart" still knows them.
+            DisplayManager().connectAll(keepChoices: true)
         }
     }
 }

@@ -74,6 +74,8 @@ struct HelpView: View {
                         "⌃⌥⌘U reconnects every display. ⌃⌥⌘B turns the built-in screen off or on. Turn them off under Options.")
                 section("Menu bar or window",
                         "Turn on Options > Show in Dock to use Unplug as a regular app with a window. From the window you can hide the menu bar icon.")
+                section("After a restart",
+                        "Logging out or restarting brings every display back. Turn on Options > Keep Displays Off After Restart and Unplug turns the displays you left off back off when it opens at login. It never turns off your last working display.")
                 section("If something goes wrong",
                         "Press ⌃⌥⌘U, or quit Unplug: quitting reconnects every display. Logging out or restarting always brings every display back. If you unplugged a display while it was off, choose Forget next to it.")
                 section("Command line",
