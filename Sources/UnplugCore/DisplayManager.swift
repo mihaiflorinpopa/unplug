@@ -8,6 +8,7 @@ public enum UnplugError: LocalizedError, Equatable {
     case ambiguous(String, [String])
     case alreadyConnected(String)
     case alreadyDisconnected(String)
+    case reconnectFailed(String)
     case coreGraphics(CGError)
 
     public var errorDescription: String? {
@@ -24,6 +25,8 @@ public enum UnplugError: LocalizedError, Equatable {
             return "\(name) is already connected."
         case .alreadyDisconnected(let name):
             return "\(name) is already disconnected."
+        case .reconnectFailed(let name):
+            return "Couldn't reconnect \(name). If it was unplugged, forget it with `unplug forget` or Forget in the menu."
         case .coreGraphics(let error):
             return "macOS rejected the display configuration (CGError \(error.rawValue))."
         }
@@ -59,7 +62,10 @@ public final class DisplayManager {
 
     /// Finds a display by numeric ID, UUID, or a case-insensitive part of its name.
     public func resolve(_ query: String) throws -> Display {
-        let all = displays()
+        try Self.match(query, in: displays())
+    }
+
+    static func match(_ query: String, in all: [Display]) throws -> Display {
         if let id = UInt32(query), let match = all.first(where: { $0.displayID == id }) {
             return match
         }
@@ -98,13 +104,25 @@ public final class DisplayManager {
     public func connect(_ display: Display) throws {
         guard SkyLight.isAvailable else { throw UnplugError.privateAPIUnavailable }
         guard !display.isConnected else { throw UnplugError.alreadyConnected(display.name) }
-        try Self.transaction { SkyLight.configure($0, display: display.displayID, enabled: true) }
+        do {
+            try Self.transaction { SkyLight.configure($0, display: display.displayID, enabled: true) }
+        } catch UnplugError.coreGraphics {
+            // Usually the display was unplugged while disconnected, so its old ID
+            // no longer exists. Keep remembering it until the user forgets it.
+            throw UnplugError.reconnectFailed(display.name)
+        }
         store.forget(uuid: display.uuid)
         if display.isBuiltin && !UnplugSettings.keyboardBacklightOffByUser {
             // Only acts if a disconnect saved the backlight state earlier, and
             // leaves the light off if the user switched it off themselves.
             KeyboardBacklight.restore()
         }
+    }
+
+    /// Stops remembering a disconnected display, for one that was unplugged and
+    /// can no longer be reconnected. Plugging it back in brings it back anyway.
+    public func forget(_ display: Display) {
+        store.forget(uuid: display.uuid)
     }
 
     public func toggle(_ display: Display, force: Bool = false) throws {

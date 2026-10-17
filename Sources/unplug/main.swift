@@ -10,6 +10,8 @@ commands:
   connect <display>            Reconnect a display Unplug disconnected
   connect --all                Reconnect every display Unplug disconnected
   toggle <display>             Disconnect if connected, otherwise reconnect
+  forget <display>             Stop remembering a disconnected display that was
+                               unplugged and can't be reconnected
   keyboard [on|off|toggle]     Turn the MacBook keyboard light on or off (no
                                argument prints its state)
 
@@ -98,6 +100,12 @@ case "toggle":
     let d = target()
     run({ try manager.toggle(d, force: force) },
         done: d.isConnected ? "Disconnected \(d.name)." : "Connected \(d.name).")
+
+case "forget":
+    let d = target()
+    guard !d.isConnected else { fail("\(d.name) is connected; only disconnected displays can be forgotten.") }
+    manager.forget(d)
+    print("Forgot \(d.name).")
 
 case "keyboard", "kbd":
     guard KeyboardBacklight.isAvailable else { fail("this Mac has no keyboard backlight Unplug can control.") }

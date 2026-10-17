@@ -53,9 +53,41 @@ public enum KeyboardBacklight {
         return ids.map(\.uint64Value)
     }
 
-    /// True while Unplug has the backlight turned off (it holds a saved level).
+    /// Brightness of the first keyboard backlight, or nil if it can't be read.
+    static func currentBrightness() -> Float? {
+        guard let get = function("brightnessForKeyboard:", as: GetFloat.self),
+              let id = keyboardIDs().first
+        else { return nil }
+        return get.2(get.0, get.1, id)
+    }
+
+    /// True while the backlight is off. Reads the real brightness, so it stays
+    /// right after a restart or a change made with the brightness keys.
     public static var isOff: Bool {
-        FileManager.default.fileExists(atPath: fileURL.path)
+        reconcile()
+        if let level = currentBrightness() { return level < 0.01 }
+        return FileManager.default.fileExists(atPath: fileURL.path)
+    }
+
+    /// Drops a saved level that no longer applies because the light is on
+    /// again (brightness keys, or macOS after a restart), and puts back the
+    /// auto-brightness setting it held. Files younger than a few seconds are
+    /// kept, since the light fades out over a moment after `turnOff()`.
+    static func reconcile() {
+        guard let attributes = try? FileManager.default.attributesOfItem(atPath: fileURL.path),
+              let saved = attributes[.modificationDate] as? Date,
+              Date().timeIntervalSince(saved) > 5,
+              let level = currentBrightness(), level >= 0.01
+        else { return }
+        let setAuto = function("enableAutoBrightness:forKeyboard:", as: SetBool.self)
+        if let data = try? Data(contentsOf: fileURL),
+           let items = try? JSONDecoder().decode([Saved].self, from: data), let setAuto {
+            for item in items where item.autoBrightness {
+                _ = setAuto.2(setAuto.0, setAuto.1, true, item.keyboardID)
+            }
+        }
+        try? FileManager.default.removeItem(at: fileURL)
+        UnplugSettings.keyboardBacklightOffByUser = false
     }
 
     /// Turns the backlight on or off on the user's request, independently of
@@ -63,7 +95,13 @@ public enum KeyboardBacklight {
     public static func setOn(_ on: Bool) {
         if on {
             UnplugSettings.keyboardBacklightOffByUser = false
-            restore()
+            if FileManager.default.fileExists(atPath: fileURL.path) {
+                restore()
+            } else if let level = currentBrightness(), level < 0.01,
+                      let set = function("setBrightness:forKeyboard:", as: SetFloat.self) {
+                // Dimmed with the brightness keys, so there is no saved level.
+                for id in keyboardIDs() { _ = set.2(set.0, set.1, 0.5, id) }
+            }
         } else {
             turnOff()
             UnplugSettings.keyboardBacklightOffByUser = true
@@ -80,6 +118,7 @@ public enum KeyboardBacklight {
         let setAuto = function("enableAutoBrightness:forKeyboard:", as: SetBool.self)
 
         // Don't overwrite an earlier save with the already-dimmed state.
+        reconcile()
         if FileManager.default.fileExists(atPath: fileURL.path) { return }
 
         var saved: [Saved] = []

@@ -33,17 +33,33 @@ To stop the keyboard light following the screen, untick "Turn Off Keyboard Light
 defaults write io.github.mihaiflorinpopa.unplug keyboardBacklightFollowsBuiltin -bool false
 ```
 
+### Keyboard shortcuts
+
+These work anywhere while Unplug is running:
+
+- Control-Option-Command-U (⌃⌥⌘U) reconnects every display Unplug disconnected.
+- Control-Option-Command-B (⌃⌥⌘B) turns the built-in screen off or back on.
+
+Untick "Keyboard Shortcuts" in the menu to turn them off.
+
 ### Safety
 
 - Unplug refuses to disconnect the last active display unless you pass `--force`.
 - By default, quitting the menu bar app reconnects every display it disconnected.
-- If something goes wrong, log out and back in, or run `unplug connect --all`.
+- If something goes wrong, press ⌃⌥⌘U, log out and back in, or run `unplug connect --all`.
+- If you unplug a display while Unplug has it disconnected, it can't be reconnected. Unplug then offers "Forget" in the menu (or run `unplug forget <display>`). Plugging it back in brings it back either way.
 
 ## Install
 
 Download `Unplug-<version>.dmg` from [Releases](../../releases), open it, and drag Unplug into Applications.
 
-Unplug isn't notarized by Apple yet, so the first launch is blocked. Right-click Unplug in Applications and choose Open, or run:
+Unplug isn't notarized by Apple yet, so macOS blocks the first launch. To allow it:
+
+1. Open Unplug once and dismiss the warning.
+2. Go to System Settings > Privacy & Security, scroll down, and click "Open Anyway" next to the message about Unplug.
+3. Confirm with your password.
+
+Or remove the quarantine flag in Terminal instead:
 
 ```sh
 xattr -dr com.apple.quarantine /Applications/Unplug.app
@@ -55,6 +71,7 @@ The command line tool comes inside the app; see [Command line](#command-line) to
 
 ```sh
 ./scripts/build-dmg.sh   # builds build/Unplug.app and build/Unplug-<version>.dmg
+swift test               # runs the unit tests
 ```
 
 ### Versions and releases
@@ -95,6 +112,7 @@ unplug disconnect "LG"         # by part of the name, display ID, or UUID
 unplug connect "LG"
 unplug toggle 3
 unplug connect --all
+unplug forget "LG"             # stop remembering a disconnected display that was unplugged
 unplug list --json
 unplug keyboard off            # keyboard light: on, off, toggle, or no argument for its state
 unplug --version
