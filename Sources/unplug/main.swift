@@ -10,6 +10,8 @@ commands:
   connect <display>            Reconnect a display Unplug disconnected
   connect --all                Reconnect every display Unplug disconnected
   toggle <display>             Disconnect if connected, otherwise reconnect
+  keyboard [on|off|toggle]     Turn the MacBook keyboard light on or off (no
+                               argument prints its state)
 
 <display> is an ID or UUID from `unplug list`, or part of the display's name.
 
@@ -90,6 +92,25 @@ case "toggle":
     let d = target()
     run({ try manager.toggle(d, force: force) },
         done: d.isConnected ? "Disconnected \(d.name)." : "Connected \(d.name).")
+
+case "keyboard", "kbd":
+    guard KeyboardBacklight.isAvailable else { fail("this Mac has no keyboard backlight Unplug can control.") }
+    switch positional.dropFirst().first {
+    case nil:
+        print(KeyboardBacklight.isOff ? "off" : "on")
+    case "on"?:
+        KeyboardBacklight.setOn(true)
+        print("Keyboard light on.")
+    case "off"?:
+        KeyboardBacklight.setOn(false)
+        print("Keyboard light off.")
+    case "toggle"?:
+        let on = KeyboardBacklight.isOff
+        KeyboardBacklight.setOn(on)
+        print(on ? "Keyboard light on." : "Keyboard light off.")
+    case let other?:
+        fail("unknown keyboard option \"\(other)\". Use on, off or toggle.")
+    }
 
 case "help":
     print(usage)

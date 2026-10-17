@@ -53,6 +53,23 @@ public enum KeyboardBacklight {
         return ids.map(\.uint64Value)
     }
 
+    /// True while Unplug has the backlight turned off (it holds a saved level).
+    public static var isOff: Bool {
+        FileManager.default.fileExists(atPath: fileURL.path)
+    }
+
+    /// Turns the backlight on or off on the user's request, independently of
+    /// the built-in display.
+    public static func setOn(_ on: Bool) {
+        if on {
+            UnplugSettings.keyboardBacklightOffByUser = false
+            restore()
+        } else {
+            turnOff()
+            UnplugSettings.keyboardBacklightOffByUser = true
+        }
+    }
+
     /// Saves the current level and turns every keyboard backlight off. Auto
     /// brightness is disabled too, otherwise the light sensor turns it back on.
     public static func turnOff() {

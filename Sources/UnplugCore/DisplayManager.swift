@@ -100,8 +100,9 @@ public final class DisplayManager {
         guard !display.isConnected else { throw UnplugError.alreadyConnected(display.name) }
         try Self.transaction { SkyLight.configure($0, display: display.displayID, enabled: true) }
         store.forget(uuid: display.uuid)
-        if display.isBuiltin {
-            // Only acts if a disconnect saved the backlight state earlier.
+        if display.isBuiltin && !UnplugSettings.keyboardBacklightOffByUser {
+            // Only acts if a disconnect saved the backlight state earlier, and
+            // leaves the light off if the user switched it off themselves.
             KeyboardBacklight.restore()
         }
     }
