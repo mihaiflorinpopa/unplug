@@ -93,20 +93,25 @@ final class DisplaysModel: ObservableObject {
 struct MenuContent: View {
     @ObservedObject var model: DisplaysModel
 
+    private var builtin: [Display] { model.displays.filter(\.isBuiltin) }
+    private var external: [Display] { model.displays.filter { !$0.isBuiltin } }
+
     var body: some View {
-        ForEach(model.displays) { display in
-            Toggle(label(for: display), isOn: Binding(
-                get: { display.isConnected },
-                set: { model.setConnected(display, $0) }
-            ))
-            if display.isBuiltin {
-                // Sits right under the built-in display it applies to.
-                Toggle("    Keyboard Light Off Too", isOn: $model.keyboardBacklightFollowsBuiltin)
+        // The built-in display and the keyboard light it controls, together.
+        ForEach(builtin) { display in
+            Section(display.name) {
+                Toggle("Screen", isOn: connected(display))
+                Toggle("Turn Off Keyboard Light with Screen", isOn: $model.keyboardBacklightFollowsBuiltin)
             }
         }
 
-        if model.displays.contains(where: { !$0.isConnected }) {
-            Button("Reconnect All") { model.connectAll() }
+        if !external.isEmpty {
+            if !builtin.isEmpty { Divider() }
+            Section("External Displays") {
+                ForEach(external) { display in
+                    Toggle(display.name, isOn: connected(display))
+                }
+            }
         }
 
         if let error = model.lastError {
@@ -115,6 +120,9 @@ struct MenuContent: View {
         }
 
         Divider()
+        if model.displays.contains(where: { !$0.isConnected }) {
+            Button("Reconnect All Displays") { model.connectAll() }
+        }
         Toggle("Reconnect Displays on Quit", isOn: $model.reconnectOnQuit)
         Toggle("Launch at Login", isOn: $model.launchAtLogin)
         Divider()
@@ -122,7 +130,10 @@ struct MenuContent: View {
             .keyboardShortcut("q")
     }
 
-    private func label(for display: Display) -> String {
-        display.isBuiltin ? "\(display.name) (Built-in)" : display.name
+    private func connected(_ display: Display) -> Binding<Bool> {
+        Binding(
+            get: { display.isConnected },
+            set: { model.setConnected(display, $0) }
+        )
     }
 }

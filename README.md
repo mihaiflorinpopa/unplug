@@ -21,7 +21,7 @@ The private call lives in one file, [`Sources/UnplugCore/SkyLight.swift`](Source
 
 ### Keyboard backlight
 
-When you disconnect a MacBook's built-in display, Unplug also turns the keyboard backlight off, and puts it back (including auto-brightness) when the display is reconnected. This uses the private `KeyboardBrightnessClient` class from CoreBrightness, isolated in [`KeyboardBacklight.swift`](Sources/UnplugCore/KeyboardBacklight.swift). Turn it off with the "Keyboard Light Off Too" toggle under the built-in display in the menu, or with:
+When you disconnect a MacBook's built-in display, Unplug also turns the keyboard backlight off, and puts it back (including auto-brightness) when the display is reconnected. This uses the private `KeyboardBrightnessClient` class from CoreBrightness, isolated in [`KeyboardBacklight.swift`](Sources/UnplugCore/KeyboardBacklight.swift). Turn it off with "Turn Off Keyboard Light with Screen" in the built-in display section of the menu, or with:
 
 ```sh
 defaults write io.github.mihaiflorinpopa.unplug keyboardBacklightFollowsBuiltin -bool false
