@@ -24,12 +24,12 @@ Click the display icon in the menu bar:
 
 - **Turn a display off or on** by clicking its name.
 - **Brightness:** set each display's brightness, from the menu or with a slider in the window. Works for the built-in screen, Apple displays, and most other monitors (through DDC on Apple Silicon Macs).
-- **Built-in screen:** on a MacBook you can also turn the keyboard backlight off, and have it go off with the screen.
+- **Built-in screen:** on a MacBook you can also turn the keyboard backlight off, and have it go off with the screen. "Turn Off When a Monitor Connects" switches the built-in screen off whenever you plug in a monitor. It always comes back when the last monitor is unplugged.
 - **Reconnect All Displays** brings everything back.
-- **Options** has launch at login, keyboard shortcuts, and "Show in Dock" if you'd rather use Unplug as a regular app with a window.
+- **Options** has launch at login, keyboard shortcuts you can change, "Keep Displays Off After Restart", and "Show in Dock" if you'd rather use Unplug as a regular app with a window.
 - **Unplug Help** and **About Unplug** are at the bottom of the menu.
 
-Keyboard shortcuts work anywhere:
+Keyboard shortcuts work anywhere. These are the defaults, and you can change them under Options:
 
 | Shortcut | Does |
 | --- | --- |
@@ -39,7 +39,7 @@ Keyboard shortcuts work anywhere:
 ## If something goes wrong
 
 - Press **⌃⌥⌘U**, or quit Unplug. Quitting reconnects every display.
-- Logging out or restarting always brings every display back.
+- Logging out or restarting always brings every display back, unless you turned on "Keep Displays Off After Restart".
 - Unplug won't turn off your last working display.
 - If you unplug a display while it's turned off in Unplug, choose **Forget** next to it in the menu.
 
@@ -65,6 +65,8 @@ unplug help                  # everything else
 ```
 
 The command line and the app share their state, so you can turn a display off in one and back on in the other.
+
+To use Unplug from the Shortcuts app, add a **Run Shell Script** action with, for example, `/Applications/Unplug.app/Contents/Helpers/unplug disconnect "LG"`.
 
 ## How it works
 

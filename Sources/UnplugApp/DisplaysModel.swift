@@ -34,12 +34,26 @@ final class DisplaysModel: ObservableObject {
     /// a menu bar–only app and a regular app with a Dock icon and a window.
     var onShowInDockChange: ((Bool) -> Void)?
 
+    /// Displays still to turn off again after a restart. Some monitors come
+    /// online a moment after login, so this is retried on each display change.
+    private var pendingTurnOff: Set<String> = []
+    /// External displays that were on at the last display change, to notice one
+    /// being plugged in or the last one going away.
+    private var externalCount = 0
+
     init() {
+        if UnplugSettings.keepOffAfterRestart {
+            pendingTurnOff = UnplugSettings.turnedOff
+            turnOffPending()
+        }
         refresh()
+        externalCount = displays.filter { !$0.isBuiltin && $0.isConnected }.count
         monitor = DisplayMonitor { [weak self] in
             Task { @MainActor in
+                self?.turnOffPending()
                 self?.brightnessControl.reset()
                 self?.refresh()
+                self?.followExternalDisplays()
             }
         }
         // Re-read state each time the menu opens, so changes made elsewhere
@@ -101,6 +115,29 @@ final class DisplaysModel: ObservableObject {
         }
     }
 
+    private func turnOffPending() {
+        // Turning a display back on in the meantime (CLI included) cancels it.
+        pendingTurnOff.formIntersection(UnplugSettings.turnedOff)
+        pendingTurnOff = pendingTurnOff.filter { !manager.turnOffAgain(uuid: $0) }
+    }
+
+    /// Turns the built-in screen off when an external display is plugged in, if
+    /// the user asked for that. Whatever the setting, the built-in screen comes
+    /// back when the last external display goes away, so the Mac is never left
+    /// without a screen.
+    private func followExternalDisplays() {
+        let externals = displays.filter { !$0.isBuiltin && $0.isConnected }.count
+        defer { externalCount = externals }
+        guard let builtin = displays.first(where: \.isBuiltin) else { return }
+        if externalCount > 0, externals == 0, !builtin.isConnected {
+            try? manager.connect(builtin)
+            refresh()
+        } else if externalCount == 0, externals > 0, builtin.isConnected, UnplugSettings.builtinOffWithExternal {
+            try? manager.disconnect(builtin)
+            refresh()
+        }
+    }
+
     func setConnected(_ display: Display, _ connected: Bool) {
         do {
             if connected {
@@ -154,8 +191,8 @@ final class DisplaysModel: ObservableObject {
         }
     }
 
-    /// System-wide shortcuts: Control-Option-Command-U reconnects every display,
-    /// Control-Option-Command-B turns the built-in screen off or on.
+    /// System-wide shortcuts: one reconnects every display, one turns the
+    /// built-in screen off or on. ⌃⌥⌘U and ⌃⌥⌘B unless changed.
     var shortcutsEnabled: Bool {
         get { UserDefaults.standard.object(forKey: Self.shortcutsKey) as? Bool ?? true }
         set {
@@ -165,15 +202,50 @@ final class DisplaysModel: ObservableObject {
         }
     }
 
+    var reconnectAllShortcut: Shortcut {
+        get { Self.loadShortcut("shortcut.reconnectAll") ?? .reconnectAll }
+        set { saveShortcut(newValue, "shortcut.reconnectAll") }
+    }
+
+    var toggleBuiltinShortcut: Shortcut {
+        get { Self.loadShortcut("shortcut.toggleBuiltin") ?? .toggleBuiltin }
+        set { saveShortcut(newValue, "shortcut.toggleBuiltin") }
+    }
+
+    /// Both shortcuts as shown in the menu, such as "⌃⌥⌘U, ⌃⌥⌘B".
+    var shortcutsSummary: String {
+        "\(reconnectAllShortcut.description), \(toggleBuiltinShortcut.description)"
+    }
+
+    /// Lets the shortcut recorder see keys that are currently shortcuts.
+    func pauseShortcuts(_ paused: Bool) {
+        if paused { hotKeys.unregisterAll() } else { applyShortcuts() }
+    }
+
+    private static func loadShortcut(_ key: String) -> Shortcut? {
+        UserDefaults.standard.data(forKey: key).flatMap { try? JSONDecoder().decode(Shortcut.self, from: $0) }
+    }
+
+    private func saveShortcut(_ shortcut: Shortcut, _ key: String) {
+        UserDefaults.standard.set(try? JSONEncoder().encode(shortcut), forKey: key)
+        applyShortcuts()
+        objectWillChange.send()
+    }
+
     private func applyShortcuts() {
         hotKeys.unregisterAll()
         guard shortcutsEnabled else { return }
-        let modifiers = controlKey | optionKey | cmdKey
-        hotKeys.register(keyCode: kVK_ANSI_U, modifiers: modifiers) { [weak self] in
+        var taken: [String] = []
+        let reconnect = reconnectAllShortcut
+        if !hotKeys.register(keyCode: reconnect.keyCode, modifiers: reconnect.modifiers, action: { [weak self] in
             Task { @MainActor in self?.connectAll() }
-        }
-        hotKeys.register(keyCode: kVK_ANSI_B, modifiers: modifiers) { [weak self] in
+        }) { taken.append(reconnect.description) }
+        let builtin = toggleBuiltinShortcut
+        if !hotKeys.register(keyCode: builtin.keyCode, modifiers: builtin.modifiers, action: { [weak self] in
             Task { @MainActor in self?.toggleBuiltin() }
+        }) { taken.append(builtin.description) }
+        if !taken.isEmpty {
+            lastError = "\(taken.joined(separator: " and ")) already belongs to another app. Choose another shortcut in Options."
         }
     }
 
@@ -193,6 +265,25 @@ final class DisplaysModel: ObservableObject {
             UserDefaults.standard.set(newValue, forKey: Self.showInDockKey)
             if !newValue && !showInMenuBar { showInMenuBar = true }
             onShowInDockChange?(newValue)
+            objectWillChange.send()
+        }
+    }
+
+    var builtinOffWithExternal: Bool {
+        get { UnplugSettings.builtinOffWithExternal }
+        set {
+            UnplugSettings.builtinOffWithExternal = newValue
+            objectWillChange.send()
+        }
+    }
+
+    /// Turns displays the user left off back off when Unplug starts. Needs
+    /// Unplug to open at login, so turning it on also turns that on.
+    var keepOffAfterRestart: Bool {
+        get { UnplugSettings.keepOffAfterRestart }
+        set {
+            UnplugSettings.keepOffAfterRestart = newValue
+            if newValue && !launchAtLogin { launchAtLogin = true }
             objectWillChange.send()
         }
     }

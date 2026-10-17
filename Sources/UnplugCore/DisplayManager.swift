@@ -96,12 +96,15 @@ public final class DisplayManager {
             store.forget(uuid: display.uuid)
             throw error
         }
+        UnplugSettings.turnedOff.insert(display.uuid)
         if display.isBuiltin && UnplugSettings.keyboardBacklightFollowsBuiltin {
             KeyboardBacklight.turnOff()
         }
     }
 
-    public func connect(_ display: Display) throws {
+    /// Reconnects a display. `keepChoice` is for reconnecting on quit: the
+    /// display comes back now but still counts as one the user turned off.
+    public func connect(_ display: Display, keepChoice: Bool = false) throws {
         guard SkyLight.isAvailable else { throw UnplugError.privateAPIUnavailable }
         guard !display.isConnected else { throw UnplugError.alreadyConnected(display.name) }
         do {
@@ -112,6 +115,7 @@ public final class DisplayManager {
             throw UnplugError.reconnectFailed(display.name)
         }
         store.forget(uuid: display.uuid)
+        if !keepChoice { UnplugSettings.turnedOff.remove(display.uuid) }
         if display.isBuiltin && !UnplugSettings.keyboardBacklightOffByUser {
             // Only acts if a disconnect saved the backlight state earlier, and
             // leaves the light off if the user switched it off themselves.
@@ -123,6 +127,22 @@ public final class DisplayManager {
     /// can no longer be reconnected. Plugging it back in brings it back anyway.
     public func forget(_ display: Display) {
         store.forget(uuid: display.uuid)
+        UnplugSettings.turnedOff.remove(display.uuid)
+    }
+
+    /// Turns a display off again if it is online and on, for "Keep Displays Off
+    /// After Restart". Returns false when it isn't online yet or is the last
+    /// active display, so the caller can try again on the next display change.
+    public func turnOffAgain(uuid: String) -> Bool {
+        guard let display = Self.onlineDisplayIDs().compactMap(Display.current).first(where: { $0.uuid == uuid })
+        else { return false }
+        guard display.isConnected else { return true }
+        do {
+            try disconnect(display)
+            return true
+        } catch {
+            return false
+        }
     }
 
     public func toggle(_ display: Display, force: Bool = false) throws {
@@ -135,10 +155,10 @@ public final class DisplayManager {
 
     /// Reconnects every display Unplug disconnected. Returns the ones that failed.
     @discardableResult
-    public func connectAll() -> [(Display, Error)] {
+    public func connectAll(keepChoices: Bool = false) -> [(Display, Error)] {
         displays().filter { !$0.isConnected }.compactMap { display in
             do {
-                try connect(display)
+                try connect(display, keepChoice: keepChoices)
                 return nil
             } catch {
                 return (display, error)

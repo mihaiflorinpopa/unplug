@@ -16,6 +16,7 @@ struct DisplaySections: View {
             Section(display.name) {
                 Toggle("Screen", isOn: connected(display))
                 brightnessControl(display)
+                Toggle("Turn Off When a Monitor Connects", isOn: $model.builtinOffWithExternal)
                 if model.keyboardBacklightAvailable {
                     Toggle("Keyboard Backlight", isOn: $model.keyboardLightOn)
                     Toggle("Turn Off Keyboard Backlight with Screen", isOn: $model.keyboardBacklightFollowsBuiltin)
@@ -80,6 +81,7 @@ struct MenuContent: View {
     @ObservedObject var updater: Updater
     let showAbout: () -> Void
     let showHelp: () -> Void
+    let showShortcuts: () -> Void
 
     var body: some View {
         DisplaySections(model: model, inMenu: true)
@@ -95,8 +97,10 @@ struct MenuContent: View {
         }
         Menu("Options") {
             Toggle("Reconnect Displays on Quit", isOn: $model.reconnectOnQuit)
-            Toggle("Keyboard Shortcuts (⌃⌥⌘U, ⌃⌥⌘B)", isOn: $model.shortcutsEnabled)
+            Toggle("Keyboard Shortcuts (\(model.shortcutsSummary))", isOn: $model.shortcutsEnabled)
+            Button("Change Keyboard Shortcuts…") { showShortcuts() }
             Toggle("Launch at Login", isOn: $model.launchAtLogin)
+            Toggle("Keep Displays Off After Restart", isOn: $model.keepOffAfterRestart)
             Divider()
             Toggle("Show in Dock", isOn: $model.showInDock)
             if updater.isAvailable {
