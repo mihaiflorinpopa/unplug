@@ -26,6 +26,7 @@ Click the display icon in the menu bar:
 - **Built-in screen:** on a MacBook you can also turn the keyboard backlight off, and have it go off with the screen.
 - **Reconnect All Displays** brings everything back.
 - **Options** has launch at login, keyboard shortcuts, and "Show in Dock" if you'd rather use Unplug as a regular app with a window.
+- **Unplug Help** and **About Unplug** are at the bottom of the menu.
 
 Keyboard shortcuts work anywhere:
 
@@ -79,6 +80,10 @@ swift test               # runs the tests
 ```
 
 To release, change the version in [`VERSION`](VERSION) and merge to main. CI publishes the GitHub release with the .dmg and the update feed (`appcast.xml`). Updates are checked with [Sparkle](https://sparkle-project.org) and signed with the key in the `SPARKLE_PRIVATE_KEY` repository secret. Its public half is [`Resources/sparkle-public-key.txt`](Resources/sparkle-public-key.txt).
+
+## Author
+
+Made by Mihai Florin Popa ([@mihaiflorinpopa](https://github.com/mihaiflorinpopa)).
 
 ## Related projects
 

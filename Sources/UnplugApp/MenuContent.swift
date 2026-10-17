@@ -46,6 +46,8 @@ struct DisplaySections: View {
 struct MenuContent: View {
     @ObservedObject var model: DisplaysModel
     @ObservedObject var updater: Updater
+    let showAbout: () -> Void
+    let showHelp: () -> Void
 
     var body: some View {
         DisplaySections(model: model, inMenu: true)
@@ -71,7 +73,8 @@ struct MenuContent: View {
             }
         }
         Divider()
-        Text("Unplug \(UnplugVersion.current)")
+        Button("About Unplug") { showAbout() }
+        Button("Unplug Help") { showHelp() }
         if updater.isAvailable {
             Button("Check for Updates…") { updater.checkForUpdates() }
                 .disabled(!updater.canCheck)
