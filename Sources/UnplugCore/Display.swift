@@ -4,7 +4,7 @@ import Foundation
 
 /// A display Unplug knows about: either online now, or one it disconnected and
 /// remembers so it can bring it back.
-public struct Display: Codable, Hashable, Identifiable {
+public struct Display: Codable, Hashable, Identifiable, Sendable {
     /// Stable identity across reboots and re-enumeration (macOS can renumber IDs).
     public let uuid: String
     /// The `CGDirectDisplayID` the display had when it was last seen.

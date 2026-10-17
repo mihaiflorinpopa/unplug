@@ -12,8 +12,9 @@ import IOKit
 ///   monitors on Apple Silicon. Monitors that don't answer DDC get no control.
 ///
 /// Calls can block for a moment while a monitor answers, so call them off the
-/// main thread.
-public final class Brightness {
+/// main thread. Safe to share between threads: the only state is the cache of
+/// DDC channels, which a lock guards.
+public final class Brightness: @unchecked Sendable {
     public init() {}
 
     /// Brightness from 0 to 1, or nil if this display can't be controlled.
