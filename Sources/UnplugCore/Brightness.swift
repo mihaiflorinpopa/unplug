@@ -35,6 +35,12 @@ public final class Brightness {
         return DDC.writeBrightness(service, level)
     }
 
+    /// True when macOS controls this display's brightness itself (built-in
+    /// screen, Apple displays), so its brightness keys already work.
+    public static func isHandledByMacOS(_ displayID: CGDirectDisplayID) -> Bool {
+        DisplayServices.get(displayID) != nil
+    }
+
     // MARK: - Matching displays to their DDC channel
 
     private var services: [CGDirectDisplayID: CFTypeRef] = [:]
