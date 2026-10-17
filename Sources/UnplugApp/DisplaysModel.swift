@@ -37,6 +37,9 @@ final class DisplaysModel: ObservableObject {
     /// Displays still to turn off again after a restart. Some monitors come
     /// online a moment after login, so this is retried on each display change.
     private var pendingTurnOff: Set<String> = []
+    /// External displays that were on at the last display change, to notice one
+    /// being plugged in or the last one going away.
+    private var externalCount = 0
 
     init() {
         if UnplugSettings.keepOffAfterRestart {
@@ -44,11 +47,13 @@ final class DisplaysModel: ObservableObject {
             turnOffPending()
         }
         refresh()
+        externalCount = displays.filter { !$0.isBuiltin && $0.isConnected }.count
         monitor = DisplayMonitor { [weak self] in
             Task { @MainActor in
                 self?.turnOffPending()
                 self?.brightnessControl.reset()
                 self?.refresh()
+                self?.followExternalDisplays()
             }
         }
         // Re-read state each time the menu opens, so changes made elsewhere
@@ -114,6 +119,23 @@ final class DisplaysModel: ObservableObject {
         // Turning a display back on in the meantime (CLI included) cancels it.
         pendingTurnOff.formIntersection(UnplugSettings.turnedOff)
         pendingTurnOff = pendingTurnOff.filter { !manager.turnOffAgain(uuid: $0) }
+    }
+
+    /// Turns the built-in screen off when an external display is plugged in, if
+    /// the user asked for that. Whatever the setting, the built-in screen comes
+    /// back when the last external display goes away, so the Mac is never left
+    /// without a screen.
+    private func followExternalDisplays() {
+        let externals = displays.filter { !$0.isBuiltin && $0.isConnected }.count
+        defer { externalCount = externals }
+        guard let builtin = displays.first(where: \.isBuiltin) else { return }
+        if externalCount > 0, externals == 0, !builtin.isConnected {
+            try? manager.connect(builtin)
+            refresh()
+        } else if externalCount == 0, externals > 0, builtin.isConnected, UnplugSettings.builtinOffWithExternal {
+            try? manager.disconnect(builtin)
+            refresh()
+        }
     }
 
     func setConnected(_ display: Display, _ connected: Bool) {
@@ -208,6 +230,14 @@ final class DisplaysModel: ObservableObject {
             UserDefaults.standard.set(newValue, forKey: Self.showInDockKey)
             if !newValue && !showInMenuBar { showInMenuBar = true }
             onShowInDockChange?(newValue)
+            objectWillChange.send()
+        }
+    }
+
+    var builtinOffWithExternal: Bool {
+        get { UnplugSettings.builtinOffWithExternal }
+        set {
+            UnplugSettings.builtinOffWithExternal = newValue
             objectWillChange.send()
         }
     }

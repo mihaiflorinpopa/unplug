@@ -24,7 +24,7 @@ Click the display icon in the menu bar:
 
 - **Turn a display off or on** by clicking its name.
 - **Brightness:** set each display's brightness, from the menu or with a slider in the window. Works for the built-in screen, Apple displays, and most other monitors (through DDC on Apple Silicon Macs).
-- **Built-in screen:** on a MacBook you can also turn the keyboard backlight off, and have it go off with the screen.
+- **Built-in screen:** on a MacBook you can also turn the keyboard backlight off, and have it go off with the screen. "Turn Off When a Monitor Connects" switches the built-in screen off whenever you plug in a monitor. It always comes back when the last monitor is unplugged.
 - **Reconnect All Displays** brings everything back.
 - **Options** has launch at login, keyboard shortcuts, and "Show in Dock" if you'd rather use Unplug as a regular app with a window.
 - **Unplug Help** and **About Unplug** are at the bottom of the menu.

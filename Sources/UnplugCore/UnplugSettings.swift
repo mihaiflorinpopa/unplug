@@ -23,6 +23,15 @@ public enum UnplugSettings {
         set { defaults.set(newValue, forKey: keepOffAfterRestartKey) }
     }
 
+    public static let builtinOffWithExternalKey = "builtinOffWithExternal"
+
+    /// Turn the built-in screen off when an external display connects, and
+    /// back on when the last one disconnects.
+    public static var builtinOffWithExternal: Bool {
+        get { defaults.bool(forKey: builtinOffWithExternalKey) }
+        set { defaults.set(newValue, forKey: builtinOffWithExternalKey) }
+    }
+
     /// UUIDs of the displays the user turned off and hasn't turned back on.
     public static var turnedOff: Set<String> {
         get { Set(defaults.stringArray(forKey: "turnedOff") ?? []) }

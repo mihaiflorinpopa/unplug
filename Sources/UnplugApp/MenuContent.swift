@@ -16,6 +16,7 @@ struct DisplaySections: View {
             Section(display.name) {
                 Toggle("Screen", isOn: connected(display))
                 brightnessControl(display)
+                Toggle("Turn Off When a Monitor Connects", isOn: $model.builtinOffWithExternal)
                 if model.keyboardBacklightAvailable {
                     Toggle("Keyboard Backlight", isOn: $model.keyboardLightOn)
                     Toggle("Turn Off Keyboard Backlight with Screen", isOn: $model.keyboardBacklightFollowsBuiltin)

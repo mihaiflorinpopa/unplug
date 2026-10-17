@@ -69,7 +69,7 @@ struct HelpView: View {
                 section("Brightness",
                         "Each display that supports it has a brightness control: a submenu in the menu bar, and a slider in the window. Monitors that don't answer brightness commands don't show one.")
                 section("Built-in screen and keyboard backlight",
-                        "On a MacBook, the built-in screen has its own section. You can turn the keyboard backlight off by itself, or have it go off with the screen and come back with it.")
+                        "On a MacBook, the built-in screen has its own section. You can turn the keyboard backlight off by itself, or have it go off with the screen and come back with it. Turn on \"Turn Off When a Monitor Connects\" to switch the built-in screen off whenever you plug in a monitor. When the last monitor is unplugged, the built-in screen always comes back on.")
                 section("Keyboard shortcuts",
                         "⌃⌥⌘U reconnects every display. ⌃⌥⌘B turns the built-in screen off or on. Turn them off under Options.")
                 section("Menu bar or window",
