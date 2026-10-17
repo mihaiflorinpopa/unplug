@@ -23,7 +23,7 @@ You only need step 3 once. After that, Unplug updates itself.
 Click the display icon in the menu bar:
 
 - **Turn a display off or on** by clicking its name.
-- **Built-in screen:** on a MacBook you can also turn the keyboard light off, and have it go off with the screen.
+- **Built-in screen:** on a MacBook you can also turn the keyboard backlight off, and have it go off with the screen.
 - **Reconnect All Displays** brings everything back.
 - **Options** has launch at login, keyboard shortcuts, and "Show in Dock" if you'd rather use Unplug as a regular app with a window.
 
@@ -57,7 +57,7 @@ unplug disconnect "LG"       # by part of the name, ID or UUID
 unplug connect "LG"
 unplug toggle 3
 unplug connect --all
-unplug keyboard off          # keyboard light: on, off or toggle
+unplug keyboard off          # keyboard backlight: on, off or toggle
 unplug help                  # everything else
 ```
 
@@ -69,7 +69,7 @@ Apple has no public way to disconnect a display. Unplug uses one private macOS c
 
 Unplug does nothing in the background. It wakes up only when macOS reports a display change, when you open the menu or press a shortcut, and to check for updates once a day.
 
-The keyboard light uses another private call, from CoreBrightness, kept in [`KeyboardBacklight.swift`](Sources/UnplugCore/KeyboardBacklight.swift).
+The keyboard backlight uses another private call, from CoreBrightness, kept in [`KeyboardBacklight.swift`](Sources/UnplugCore/KeyboardBacklight.swift).
 
 ## For developers
 

@@ -11,13 +11,13 @@ struct DisplaySections: View {
     private var external: [Display] { model.displays.filter { !$0.isBuiltin } }
 
     var body: some View {
-        // The built-in display and the keyboard light it controls, together.
+        // The built-in display and the keyboard backlight it controls, together.
         ForEach(builtin) { display in
             Section(display.name) {
                 Toggle("Screen", isOn: connected(display))
                 if model.keyboardBacklightAvailable {
-                    Toggle("Keyboard Light", isOn: $model.keyboardLightOn)
-                    Toggle("Turn Off Keyboard Light with Screen", isOn: $model.keyboardBacklightFollowsBuiltin)
+                    Toggle("Keyboard Backlight", isOn: $model.keyboardLightOn)
+                    Toggle("Turn Off Keyboard Backlight with Screen", isOn: $model.keyboardBacklightFollowsBuiltin)
                 }
             }
         }
