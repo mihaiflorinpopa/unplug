@@ -74,6 +74,15 @@ struct HelpView: View {
                         "⌃⌥⌘U reconnects every display. ⌃⌥⌘B turns the built-in screen off or on. Change them or turn them off under Options.")
                 section("Menu bar or window",
                         "Turn on Options > Show in Dock to use Unplug as a regular app with a window. From the window you can hide the menu bar icon.")
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Options").font(.headline)
+                    ForEach(Self.options, id: \.0) { title, detail in
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(title).bold()
+                            Text(detail).fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
                 section("After a restart",
                         "Logging out or restarting brings every display back. Turn on Options > Keep Displays Off After Restart and Unplug turns the displays you left off back off when it opens at login. It never turns off your last working display.")
                 section("If something goes wrong",
@@ -86,6 +95,20 @@ struct HelpView: View {
         }
         .frame(width: 440, height: 520)
     }
+
+    /// Every option, in the order the menu and window show them.
+    private static let options: [(String, String)] = [
+        ("Turn Off When a Monitor Connects", OptionDetail.builtinOffWithExternal),
+        ("Keyboard Backlight", OptionDetail.keyboardBacklight),
+        ("Turn Off Keyboard Backlight with Screen", OptionDetail.keyboardBacklightFollowsBuiltin),
+        ("Reconnect Displays on Quit", OptionDetail.reconnectOnQuit),
+        ("Keyboard Shortcuts", OptionDetail.shortcuts),
+        ("Launch at Login", OptionDetail.launchAtLogin),
+        ("Keep Displays Off After Restart", OptionDetail.keepOffAfterRestart),
+        ("Show in Menu Bar", OptionDetail.showInMenuBar),
+        ("Show in Dock", OptionDetail.showInDock),
+        ("Check for Updates Automatically", OptionDetail.automaticUpdates),
+    ]
 
     private func section(_ title: String, _ text: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {

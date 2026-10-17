@@ -129,7 +129,7 @@ struct ShortcutsSettings: View {
     @ObservedObject var model: DisplaysModel
 
     var body: some View {
-        Toggle("Keyboard Shortcuts", isOn: $model.shortcutsEnabled)
+        OptionToggle(title: "Keyboard Shortcuts", detail: OptionDetail.shortcuts, isOn: $model.shortcutsEnabled)
         if model.shortcutsEnabled {
             ShortcutRecorder(
                 title: "Reconnect all displays", shortcut: $model.reconnectAllShortcut,
