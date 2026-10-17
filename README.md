@@ -1,4 +1,8 @@
-# Unplug
+<p align="center">
+  <img src="Resources/icon/icon-1024.png" alt="Unplug app icon" width="160">
+</p>
+
+<h1 align="center">Unplug</h1>
 
 Soft-disconnect a display on macOS so the system no longer sees it, and plug it back in with one click. Unplug is a menu bar app with a matching command line tool, free and open source under the MIT license.
 
@@ -45,11 +49,7 @@ Unplug isn't notarized by Apple yet, so the first launch is blocked. Right-click
 xattr -dr com.apple.quarantine /Applications/Unplug.app
 ```
 
-To use the command line tool, link it onto your PATH:
-
-```sh
-sudo ln -sf /Applications/Unplug.app/Contents/Helpers/unplug /usr/local/bin/unplug
-```
+The command line tool comes inside the app; see [Command line](#command-line) to set it up.
 
 ### Build from source
 
@@ -65,6 +65,30 @@ To release, bump `VERSION` in a pull request. When it merges, CI tags `v<version
 
 ## Command line
 
+The `unplug` command ships inside Unplug.app, so there's nothing extra to download.
+
+### Set up
+
+Link it onto your PATH once, after Unplug.app is in Applications:
+
+```sh
+sudo mkdir -p /usr/local/bin
+sudo ln -sf /Applications/Unplug.app/Contents/Helpers/unplug /usr/local/bin/unplug
+unplug --version
+```
+
+`/usr/local/bin` is on the PATH by default on macOS. If you'd rather not use `sudo`, link it into a folder in your home directory instead and add that folder to your PATH:
+
+```sh
+mkdir -p ~/.local/bin
+ln -sf /Applications/Unplug.app/Contents/Helpers/unplug ~/.local/bin/unplug
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc   # then open a new terminal
+```
+
+The link points into the app, so updating Unplug.app updates the CLI too. To remove it, delete the link: `sudo rm /usr/local/bin/unplug`.
+
+### Usage
+
 ```sh
 unplug list                    # displays, including ones Unplug disconnected
 unplug disconnect "LG"         # by part of the name, display ID, or UUID
@@ -72,8 +96,11 @@ unplug connect "LG"
 unplug toggle 3
 unplug connect --all
 unplug list --json
-unplug keyboard off            # keyboard light, independent of the screen
+unplug keyboard off            # keyboard light: on, off, toggle, or no argument for its state
+unplug --version
 ```
+
+If a name matches more than one display, use its ID from `unplug list`. Unplug won't disconnect the last active display unless you add `--force`. The CLI and the menu bar app share their state, so you can disconnect a display from one and reconnect it from the other.
 
 ## Requirements
 
