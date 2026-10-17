@@ -16,6 +16,8 @@ jobs:
       - uses: actions/checkout@v5
       - name: Build app and disk image
         run: ./scripts/build-dmg.sh
+      - name: Check app icon
+        run: test -s build/Unplug.app/Contents/Resources/AppIcon.icns
       - name: Smoke-test CLI
         run: |
           ./build/Unplug.app/Contents/Helpers/unplug help
