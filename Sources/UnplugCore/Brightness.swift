@@ -35,11 +35,16 @@ public final class Brightness {
         return DDC.writeBrightness(service, level)
     }
 
-    /// True when macOS controls this display's brightness itself (built-in
-    /// screen, Apple displays), so its brightness keys already work.
+    /// True when macOS's brightness keys already work on this display: the
+    /// built-in screen and Apple displays. Since macOS 15, DisplayServices also
+    /// dims other monitors while HDR is on, but the keys don't reach those, so
+    /// they're checked by Apple's vendor ID too.
     public static func isHandledByMacOS(_ displayID: CGDirectDisplayID) -> Bool {
-        DisplayServices.get(displayID) != nil
+        if CGDisplayIsBuiltin(displayID) != 0 { return true }
+        return CGDisplayVendorNumber(displayID) == appleVendorID && DisplayServices.get(displayID) != nil
     }
+
+    private static let appleVendorID: UInt32 = 0x610
 
     // MARK: - Matching displays to their DDC channel
 
