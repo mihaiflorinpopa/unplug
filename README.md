@@ -33,6 +33,10 @@ To stop the keyboard light following the screen, untick "Turn Off Keyboard Light
 defaults write io.github.mihaiflorinpopa.unplug keyboardBacklightFollowsBuiltin -bool false
 ```
 
+### Menu bar or window
+
+Unplug lives in the menu bar by default. If you'd rather use it as a regular app, turn on Options > "Show in Dock": Unplug gets a Dock icon and a window with the same controls, and you can then hide the menu bar icon with "Show in Menu Bar" in the window. Opening Unplug again from Finder or Spotlight always brings the window up.
+
 ### Keyboard shortcuts
 
 These work anywhere while Unplug is running:
@@ -65,6 +69,10 @@ Or remove the quarantine flag in Terminal instead:
 xattr -dr com.apple.quarantine /Applications/Unplug.app
 ```
 
+### Updates
+
+Unplug updates itself with [Sparkle](https://sparkle-project.org). It checks once a day (turn that off under Options) or when you choose "Check for Updates…". Updates are signed with the project's own EdDSA key and verified before installing, so they work without Apple notarization, and only the first install needs "Open Anyway".
+
 The command line tool comes inside the app; see [Command line](#command-line) to set it up.
 
 ### Build from source
@@ -79,6 +87,8 @@ swift test               # runs the unit tests
 The version lives in the [`VERSION`](VERSION) file and is stamped into the app, the CLI (`unplug --version`), the menu and the disk image name. The build number is the commit count.
 
 To release, bump `VERSION` in a pull request. When it merges, CI tags `v<version>` and publishes a GitHub release with `Unplug-<version>.dmg` attached. Pushes to main that don't change the version don't create a release.
+
+Each release also carries `appcast.xml`, the update feed, signed by CI with the `SPARKLE_PRIVATE_KEY` repository secret. The matching public key is in [`Resources/sparkle-public-key.txt`](Resources/sparkle-public-key.txt); builds without it have updates turned off. To create a key pair, download Sparkle from its [releases](https://github.com/sparkle-project/Sparkle/releases), run `./bin/generate_keys` (prints the public key) and `./bin/generate_keys -x private-key.txt` (exports the private key for the secret).
 
 ## Command line
 
