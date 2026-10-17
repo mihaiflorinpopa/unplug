@@ -71,7 +71,7 @@ struct HelpView: View {
                 section("Built-in screen and keyboard backlight",
                         "On a MacBook, the built-in screen has its own section. You can turn the keyboard backlight off by itself, or have it go off with the screen and come back with it. Turn on \"Turn Off When a Monitor Connects\" to switch the built-in screen off whenever you plug in a monitor. When the last monitor is unplugged, the built-in screen always comes back on.")
                 section("Keyboard shortcuts",
-                        "⌃⌥⌘U reconnects every display. ⌃⌥⌘B turns the built-in screen off or on. Turn them off under Options.")
+                        "⌃⌥⌘U reconnects every display. ⌃⌥⌘B turns the built-in screen off or on. Change them or turn them off under Options.")
                 section("Menu bar or window",
                         "Turn on Options > Show in Dock to use Unplug as a regular app with a window. From the window you can hide the menu bar icon.")
                 section("After a restart",

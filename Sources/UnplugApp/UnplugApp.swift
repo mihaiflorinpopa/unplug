@@ -10,7 +10,8 @@ struct UnplugApp: App {
     var body: some Scene {
         MenuBarExtra("Unplug", systemImage: "display.2", isInserted: $showInMenuBar) {
             MenuContent(model: delegate.model, updater: delegate.updater,
-                        showAbout: { delegate.about.show() }, showHelp: { delegate.help.show() })
+                        showAbout: { delegate.about.show() }, showHelp: { delegate.help.show() },
+                        showShortcuts: { delegate.shortcuts.show() })
         }
         .commands {
             // The app menu and Help menu, seen when Unplug runs with a Dock icon.
@@ -31,6 +32,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private lazy var window = MainWindow(model: model, updater: updater)
     let about = SimpleWindow(title: "About Unplug") { AboutView() }
     let help = SimpleWindow(title: "Unplug Help") { HelpView() }
+    private(set) lazy var shortcuts = SimpleWindow(title: "Keyboard Shortcuts") { [model] in
+        Form { ShortcutsSettings(model: model) }
+            .formStyle(.grouped)
+            .frame(width: 380)
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         model.onShowInDockChange = { [weak self] in self?.setShowsInDock($0) }

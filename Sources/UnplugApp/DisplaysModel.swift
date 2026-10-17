@@ -191,8 +191,8 @@ final class DisplaysModel: ObservableObject {
         }
     }
 
-    /// System-wide shortcuts: Control-Option-Command-U reconnects every display,
-    /// Control-Option-Command-B turns the built-in screen off or on.
+    /// System-wide shortcuts: one reconnects every display, one turns the
+    /// built-in screen off or on. ⌃⌥⌘U and ⌃⌥⌘B unless changed.
     var shortcutsEnabled: Bool {
         get { UserDefaults.standard.object(forKey: Self.shortcutsKey) as? Bool ?? true }
         set {
@@ -202,15 +202,50 @@ final class DisplaysModel: ObservableObject {
         }
     }
 
+    var reconnectAllShortcut: Shortcut {
+        get { Self.loadShortcut("shortcut.reconnectAll") ?? .reconnectAll }
+        set { saveShortcut(newValue, "shortcut.reconnectAll") }
+    }
+
+    var toggleBuiltinShortcut: Shortcut {
+        get { Self.loadShortcut("shortcut.toggleBuiltin") ?? .toggleBuiltin }
+        set { saveShortcut(newValue, "shortcut.toggleBuiltin") }
+    }
+
+    /// Both shortcuts as shown in the menu, such as "⌃⌥⌘U, ⌃⌥⌘B".
+    var shortcutsSummary: String {
+        "\(reconnectAllShortcut.description), \(toggleBuiltinShortcut.description)"
+    }
+
+    /// Lets the shortcut recorder see keys that are currently shortcuts.
+    func pauseShortcuts(_ paused: Bool) {
+        if paused { hotKeys.unregisterAll() } else { applyShortcuts() }
+    }
+
+    private static func loadShortcut(_ key: String) -> Shortcut? {
+        UserDefaults.standard.data(forKey: key).flatMap { try? JSONDecoder().decode(Shortcut.self, from: $0) }
+    }
+
+    private func saveShortcut(_ shortcut: Shortcut, _ key: String) {
+        UserDefaults.standard.set(try? JSONEncoder().encode(shortcut), forKey: key)
+        applyShortcuts()
+        objectWillChange.send()
+    }
+
     private func applyShortcuts() {
         hotKeys.unregisterAll()
         guard shortcutsEnabled else { return }
-        let modifiers = controlKey | optionKey | cmdKey
-        hotKeys.register(keyCode: kVK_ANSI_U, modifiers: modifiers) { [weak self] in
+        var taken: [String] = []
+        let reconnect = reconnectAllShortcut
+        if !hotKeys.register(keyCode: reconnect.keyCode, modifiers: reconnect.modifiers, action: { [weak self] in
             Task { @MainActor in self?.connectAll() }
-        }
-        hotKeys.register(keyCode: kVK_ANSI_B, modifiers: modifiers) { [weak self] in
+        }) { taken.append(reconnect.description) }
+        let builtin = toggleBuiltinShortcut
+        if !hotKeys.register(keyCode: builtin.keyCode, modifiers: builtin.modifiers, action: { [weak self] in
             Task { @MainActor in self?.toggleBuiltin() }
+        }) { taken.append(builtin.description) }
+        if !taken.isEmpty {
+            lastError = "\(taken.joined(separator: " and ")) already belongs to another app. Choose another shortcut in Options."
         }
     }
 

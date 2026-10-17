@@ -30,16 +30,18 @@ final class HotKeys {
     }
 
     /// Registers `keyCode` (a `kVK_` constant) with Carbon modifier flags
-    /// (`cmdKey`, `optionKey`, ...). A shortcut another app already owns is skipped.
-    func register(keyCode: Int, modifiers: Int, action: @escaping () -> Void) {
+    /// (`cmdKey`, `optionKey`, ...). Returns false if another app already owns it.
+    @discardableResult
+    func register(keyCode: Int, modifiers: Int, action: @escaping () -> Void) -> Bool {
         let id = UInt32(actions.count + 1)
         var ref: EventHotKeyRef?
         let status = RegisterEventHotKey(
             UInt32(keyCode), UInt32(modifiers), EventHotKeyID(signature: Self.signature, id: id),
             GetApplicationEventTarget(), 0, &ref)
-        guard status == OSStatus(noErr), let ref else { return }
+        guard status == OSStatus(noErr), let ref else { return false }
         refs.append(ref)
         actions[id] = action
+        return true
     }
 
     func unregisterAll() {
