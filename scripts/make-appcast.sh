@@ -4,7 +4,7 @@
 set -eu
 cd "$(dirname "$0")/.."
 
-: "${SPARKLE_PRIVATE_KEY:?set SPARKLE_PRIVATE_KEY to the key exported by Sparkle's generate_keys -x}"
+: "${SPARKLE_PRIVATE_KEY:?set SPARKLE_PRIVATE_KEY to the exported Sparkle private key}"
 VERSION="$(tr -d '[:space:]' < VERSION)"
 DMG="build/Unplug-$VERSION.dmg"
 PLIST=build/Unplug.app/Contents/Info.plist
