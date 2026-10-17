@@ -1,0 +1,57 @@
+# Unplug
+
+Soft-disconnect a display on macOS so the system no longer sees it, and plug it back in with one click. Unplug is a menu bar app with a matching command line tool, free and open source under the MIT license.
+
+It's useful for a Thunderbolt or USB-C monitor you want macOS to ignore without pulling the cable, for example to keep charging and the monitor's USB hub while the screen is off.
+
+## How it works
+
+Apple has no public API that disconnects a display. Unplug makes one private call, `CGSConfigureDisplayEnabled`, which is exported by CoreGraphics (from SkyLight). It is the same mechanism other display tools use. On Apple Silicon with macOS 13 or later, a disabled display is torn down completely: it disappears from the display list and stops using GPU resources.
+
+Everything else uses Apple's documented [Quartz Display Services](https://developer.apple.com/documentation/coregraphics/quartz-display-services):
+
+- Every change runs inside a display configuration transaction (`CGBeginDisplayConfiguration` / `CGCompleteDisplayConfiguration`).
+- Changes use session scope (`.forSession`), so logging out or restarting always brings every display back.
+- The app listens for display changes with `CGDisplayRegisterReconfigurationCallback` instead of polling.
+- Displays are tracked by UUID, because macOS can renumber display IDs.
+
+A disconnected display drops out of every display list, so Unplug remembers the displays it disconnected in `~/Library/Application Support/Unplug/disconnected.json`. The app and the CLI share this file.
+
+The private call lives in one file, [`Sources/UnplugCore/SkyLight.swift`](Sources/UnplugCore/SkyLight.swift), so it is easy to audit and to fix if Apple changes it. Because of it, Unplug can't ship on the Mac App Store.
+
+### Safety
+
+- Unplug refuses to disconnect the last active display unless you pass `--force`.
+- By default, quitting the menu bar app reconnects every display it disconnected.
+- If something goes wrong, log out and back in, or run `unplug connect --all`.
+
+## Install
+
+Build from source on a Mac with Xcode or the Swift toolchain:
+
+```sh
+./scripts/build-app.sh
+cp -R build/Unplug.app /Applications/
+sudo ln -sf /Applications/Unplug.app/Contents/Helpers/unplug /usr/local/bin/unplug
+```
+
+## Command line
+
+```sh
+unplug list                    # displays, including ones Unplug disconnected
+unplug disconnect "LG"         # by part of the name, display ID, or UUID
+unplug connect "LG"
+unplug toggle 3
+unplug connect --all
+unplug list --json
+```
+
+## Requirements
+
+macOS 13 or later. Developed for Apple Silicon; Intel Macs are untested.
+
+## Related projects
+
+- [BetterDisplay](https://github.com/waydabber/BetterDisplay) and [Lunar](https://github.com/alin23/Lunar) both offer display disconnect, as closed-source or paid features.
+- [blackoutd](https://github.com/toobuntu/blackoutd) uses the same call to turn off the built-in display automatically.
+- [DisableMonitor](https://github.com/Eun/DisableMonitor) did this for older macOS versions and is archived.

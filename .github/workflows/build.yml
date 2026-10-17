@@ -1,0 +1,22 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build app bundle
+        run: ./scripts/build-app.sh
+      - name: Smoke-test CLI
+        run: |
+          ./build/Unplug.app/Contents/Helpers/unplug help
+          ./build/Unplug.app/Contents/Helpers/unplug list || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Unplug.app
+          path: build/Unplug.app

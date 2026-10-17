@@ -1,0 +1,99 @@
+import Foundation
+import UnplugCore
+
+let usage = """
+usage: unplug <command> [options]
+
+commands:
+  list                         List displays, including ones Unplug disconnected
+  disconnect <display>         Disconnect a display so macOS no longer sees it
+  connect <display>            Reconnect a display Unplug disconnected
+  connect --all                Reconnect every display Unplug disconnected
+  toggle <display>             Disconnect if connected, otherwise reconnect
+
+<display> is an ID or UUID from `unplug list`, or part of the display's name.
+
+options:
+  --force                      Allow disconnecting the last active display
+  --json                       (list) Print JSON instead of a table
+"""
+
+func fail(_ message: String) -> Never {
+    FileHandle.standardError.write(Data("unplug: \(message)\n".utf8))
+    exit(1)
+}
+
+let args = Array(CommandLine.arguments.dropFirst())
+let flags = Set(args.filter { $0.hasPrefix("--") })
+let positional = args.filter { !$0.hasPrefix("--") }
+let force = flags.contains("--force")
+let manager = DisplayManager()
+
+guard let command = positional.first else {
+    print(usage)
+    exit(flags.contains("--help") ? 0 : 1)
+}
+
+func target() -> Display {
+    guard positional.count >= 2 else { fail("\(command) needs a display. Run `unplug list`.") }
+    do {
+        return try manager.resolve(positional.dropFirst().joined(separator: " "))
+    } catch {
+        fail(error.localizedDescription)
+    }
+}
+
+func run(_ action: () throws -> Void, done: String) {
+    do {
+        try action()
+        print(done)
+    } catch {
+        fail(error.localizedDescription)
+    }
+}
+
+switch command {
+case "list", "ls":
+    let displays = manager.displays()
+    if flags.contains("--json") {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        print(String(decoding: (try? encoder.encode(displays)) ?? Data(), as: UTF8.self))
+    } else if displays.isEmpty {
+        print("No displays found.")
+    } else {
+        for d in displays {
+            let state = d.isConnected ? "connected" : "disconnected"
+            let kind = d.isBuiltin ? " (built-in)" : ""
+            print("\(String(d.displayID).padding(toLength: 6, withPad: " ", startingAt: 0))"
+                + "\(state.padding(toLength: 14, withPad: " ", startingAt: 0))"
+                + "\(d.name)\(kind)  \(d.uuid)")
+        }
+    }
+
+case "disconnect", "off":
+    let d = target()
+    run({ try manager.disconnect(d, force: force) }, done: "Disconnected \(d.name).")
+
+case "connect", "on":
+    if flags.contains("--all") {
+        let failures = manager.connectAll()
+        for (d, error) in failures {
+            FileHandle.standardError.write(Data("unplug: \(d.name): \(error.localizedDescription)\n".utf8))
+        }
+        exit(failures.isEmpty ? 0 : 1)
+    }
+    let d = target()
+    run({ try manager.connect(d) }, done: "Connected \(d.name).")
+
+case "toggle":
+    let d = target()
+    run({ try manager.toggle(d, force: force) },
+        done: d.isConnected ? "Disconnected \(d.name)." : "Connected \(d.name).")
+
+case "help":
+    print(usage)
+
+default:
+    fail("unknown command \"\(command)\".\n\n\(usage)")
+}
