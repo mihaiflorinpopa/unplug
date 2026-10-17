@@ -95,13 +95,16 @@ final class BrightnessKeys {
     }
 }
 
-/// A small on-screen indicator like the one macOS shows for its own displays.
+/// A small on-screen indicator in the style of the one macOS shows for volume
+/// and brightness: a pill in the top-right corner of the screen being changed.
+/// macOS's own indicator can't be used: since macOS 26 it no longer shows
+/// levels for external monitors.
 @MainActor
 final class BrightnessHUD {
     private var panel: NSPanel?
     private var hide: Task<Void, Never>?
 
-    func show(_ level: Double, on displayID: CGDirectDisplayID) {
+    func show(_ level: Double, name: String, on displayID: CGDirectDisplayID) {
         let screen = NSScreen.screens.first {
             ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value == displayID
         } ?? NSScreen.main
@@ -109,10 +112,11 @@ final class BrightnessHUD {
 
         let panel = self.panel ?? makePanel()
         self.panel = panel
-        panel.contentView = NSHostingView(rootView: BrightnessHUDView(level: level))
-        let size = NSSize(width: 200, height: 200)
+        panel.contentView = NSHostingView(rootView: BrightnessHUDView(level: level, name: name))
+        let size = NSSize(width: 300, height: 64)
+        let area = screen.visibleFrame
         panel.setFrame(NSRect(
-            x: screen.frame.midX - size.width / 2, y: screen.frame.minY + 140,
+            x: area.maxX - size.width - 12, y: area.maxY - size.height - 12,
             width: size.width, height: size.height), display: true)
         panel.orderFrontRegardless()
 
@@ -130,7 +134,7 @@ final class BrightnessHUD {
             backing: .buffered, defer: true)
         panel.isOpaque = false
         panel.backgroundColor = .clear
-        panel.hasShadow = false
+        panel.hasShadow = true
         panel.ignoresMouseEvents = true
         panel.level = .popUpMenu
         panel.collectionBehavior = [.canJoinAllSpaces, .transient, .ignoresCycle, .fullScreenAuxiliary]
@@ -140,19 +144,47 @@ final class BrightnessHUD {
 
 private struct BrightnessHUDView: View {
     let level: Double
+    let name: String
 
     var body: some View {
-        VStack(spacing: 16) {
+        HStack(spacing: 12) {
             Image(systemName: "sun.max.fill")
-                .font(.system(size: 56))
-            ProgressView(value: level)
-                .frame(width: 140)
-            Text("\(Int((level * 100).rounded()))%")
-                .font(.headline)
-                .monospacedDigit()
+                .font(.system(size: 22))
+                .frame(width: 32)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text(name).font(.headline).lineLimit(1)
+                    Spacer()
+                    Text("\(Int((level * 100).rounded()))%")
+                        .font(.subheadline)
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                }
+                ProgressView(value: level)
+            }
         }
+        .padding(.horizontal, 16)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(VisualEffect().clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous)))
+        .modifier(HUDBackground())
+    }
+}
+
+/// Liquid Glass on macOS 26 and later, the classic HUD material before that.
+private struct HUDBackground: ViewModifier {
+    func body(content: Content) -> some View {
+        #if compiler(>=6.2)
+        if #available(macOS 26.0, *) {
+            content.glassEffect(.regular, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        } else {
+            classic(content)
+        }
+        #else
+        classic(content)
+        #endif
+    }
+
+    private func classic(_ content: Content) -> some View {
+        content.background(VisualEffect().clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous)))
     }
 }
 

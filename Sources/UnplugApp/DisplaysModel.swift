@@ -125,7 +125,7 @@ final class DisplaysModel: ObservableObject {
         else { return }
         let level = min(max(((current * 16).rounded() + Double(step)) / 16, 0), 1)
         setBrightness(display, level)
-        hud.show(level, on: displayID)
+        hud.show(level, name: display.name, on: displayID)
     }
 
     /// Brightness keys for external monitors. Needs the Accessibility permission.
