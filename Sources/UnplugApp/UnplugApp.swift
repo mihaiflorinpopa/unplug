@@ -73,8 +73,6 @@ final class DisplaysModel: ObservableObject {
         }
     }
 
-    var hasBuiltinDisplay: Bool { displays.contains(where: \.isBuiltin) }
-
     var launchAtLogin: Bool {
         get { SMAppService.mainApp.status == .enabled }
         set {
@@ -101,6 +99,10 @@ struct MenuContent: View {
                 get: { display.isConnected },
                 set: { model.setConnected(display, $0) }
             ))
+            if display.isBuiltin {
+                // Sits right under the built-in display it applies to.
+                Toggle("    Keyboard Light Off Too", isOn: $model.keyboardBacklightFollowsBuiltin)
+            }
         }
 
         if model.displays.contains(where: { !$0.isConnected }) {
@@ -114,9 +116,6 @@ struct MenuContent: View {
 
         Divider()
         Toggle("Reconnect Displays on Quit", isOn: $model.reconnectOnQuit)
-        if model.hasBuiltinDisplay {
-            Toggle("Turn Off Keyboard Light with Built-in Display", isOn: $model.keyboardBacklightFollowsBuiltin)
-        }
         Toggle("Launch at Login", isOn: $model.launchAtLogin)
         Divider()
         Button("Quit Unplug") { NSApp.terminate(nil) }
