@@ -15,6 +15,7 @@ struct DisplaySections: View {
         ForEach(builtin) { display in
             Section(display.name) {
                 Toggle("Screen", isOn: connected(display))
+                brightnessControl(display)
                 if model.keyboardBacklightAvailable {
                     Toggle("Keyboard Backlight", isOn: $model.keyboardLightOn)
                     Toggle("Turn Off Keyboard Backlight with Screen", isOn: $model.keyboardBacklightFollowsBuiltin)
@@ -27,10 +28,41 @@ struct DisplaySections: View {
             Section("External Displays") {
                 ForEach(external) { display in
                     Toggle(display.name, isOn: connected(display))
+                    brightnessControl(display)
                     if model.unreachable.contains(display.uuid) {
                         Button("Forget \(display.name)") { model.forget(display) }
                     }
                 }
+            }
+        }
+    }
+
+    /// A slider in the window. Menus can't hold sliders, so the menu offers a
+    /// submenu of levels instead. Hidden for displays without brightness control.
+    @ViewBuilder
+    private func brightnessControl(_ display: Display) -> some View {
+        if display.isConnected, let level = model.brightness[display.uuid] {
+            let percent = Int((level * 100).rounded())
+            if inMenu {
+                Menu("Brightness: \(percent)%") {
+                    ForEach(Array(stride(from: 100, through: 0, by: -10)), id: \.self) { step in
+                        Button("\(step)%") { model.setBrightness(display, Double(step) / 100) }
+                    }
+                }
+            } else {
+                HStack {
+                    Image(systemName: "sun.min")
+                    Slider(
+                        value: Binding(
+                            get: { model.brightness[display.uuid] ?? level },
+                            set: { model.setBrightness(display, $0) }),
+                        in: 0...1
+                    )
+                    Text("\(percent)%")
+                        .monospacedDigit()
+                        .frame(width: 44, alignment: .trailing)
+                }
+                .accessibilityLabel("\(display.name) brightness")
             }
         }
     }

@@ -38,6 +38,7 @@ final class MainWindow: NSObject, NSWindowDelegate {
     /// Picks up changes made elsewhere (the CLI, the brightness keys).
     func windowDidBecomeKey(_ notification: Notification) {
         model.refresh()
+        model.refreshBrightness()
     }
 }
 

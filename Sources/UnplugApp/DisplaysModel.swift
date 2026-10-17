@@ -16,12 +16,19 @@ final class DisplaysModel: ObservableObject {
     /// Disconnected displays whose reconnect failed, usually because they were
     /// unplugged. The menu offers to forget them.
     @Published private(set) var unreachable: Set<String> = []
+    /// Brightness (0–1) by display UUID, for displays that support it. Read when
+    /// the menu or window opens; monitors are never polled.
+    @Published private(set) var brightness: [String: Double] = [:]
     @AppStorage(reconnectOnQuitKey) var reconnectOnQuit = true
 
     private let manager = DisplayManager()
     private var monitor: DisplayMonitor?
     private let hotKeys = HotKeys()
     private var menuObserver: NSObjectProtocol?
+    private let brightnessControl = Brightness()
+    /// DDC can take a moment per call, so brightness I/O runs on its own queue.
+    private let brightnessQueue = DispatchQueue(label: "io.github.mihaiflorinpopa.unplug.brightness")
+    private var pendingBrightness: [String: (Display, Double)] = [:]
 
     /// Called when "Show in Dock" changes, so the app delegate can switch between
     /// a menu bar–only app and a regular app with a Dock icon and a window.
@@ -30,7 +37,10 @@ final class DisplaysModel: ObservableObject {
     init() {
         refresh()
         monitor = DisplayMonitor { [weak self] in
-            Task { @MainActor in self?.refresh() }
+            Task { @MainActor in
+                self?.brightnessControl.reset()
+                self?.refresh()
+            }
         }
         // Re-read state each time the menu opens, so changes made elsewhere
         // (the CLI, the keyboard's brightness keys) show up.
@@ -39,6 +49,7 @@ final class DisplaysModel: ObservableObject {
         ) { [weak self] _ in
             Task { @MainActor in
                 self?.refresh()
+                self?.refreshBrightness()
                 self?.objectWillChange.send()
             }
         }
@@ -49,6 +60,44 @@ final class DisplaysModel: ObservableObject {
         displays = manager.displays()
         // A display that is back online no longer needs forgetting.
         unreachable.formIntersection(displays.filter { !$0.isConnected }.map(\.uuid))
+    }
+
+    /// Reads every connected display's brightness in the background.
+    func refreshBrightness() {
+        let displays = self.displays.filter(\.isConnected)
+        let control = brightnessControl
+        brightnessQueue.async { [weak self] in
+            var levels: [String: Double] = [:]
+            for display in displays {
+                if let level = control.get(display) { levels[display.uuid] = level }
+            }
+            Task { @MainActor in self?.brightness = levels }
+        }
+    }
+
+    /// Updates the slider at once and sends only the latest value to the
+    /// display, so dragging doesn't queue up a backlog of slow DDC writes.
+    func setBrightness(_ display: Display, _ level: Double) {
+        brightness[display.uuid] = level
+        let isIdle = pendingBrightness.isEmpty
+        pendingBrightness[display.uuid] = (display, level)
+        guard isIdle else { return }
+        sendPendingBrightness()
+    }
+
+    private func sendPendingBrightness() {
+        guard let (uuid, (display, level)) = pendingBrightness.first else { return }
+        let control = brightnessControl
+        brightnessQueue.async { [weak self] in
+            control.set(display, level)
+            Task { @MainActor in
+                guard let self else { return }
+                if let latest = self.pendingBrightness[uuid], latest.1 == level {
+                    self.pendingBrightness[uuid] = nil
+                }
+                self.sendPendingBrightness()
+            }
+        }
     }
 
     func setConnected(_ display: Display, _ connected: Bool) {
