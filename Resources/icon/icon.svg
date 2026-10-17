@@ -1,82 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
   <defs>
-    <linearGradient id="tile" x1="0.2" y1="0" x2="0.8" y2="1">
-      <stop offset="0" stop-color="#6d5dfc"/>
-      <stop offset="0.55" stop-color="#3b2fb8"/>
-      <stop offset="1" stop-color="#1b1464"/>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5b4ef0"/>
+      <stop offset="1" stop-color="#3a2fc4"/>
     </linearGradient>
-    <radialGradient id="tileGlow" cx="0.3" cy="0.12" r="0.8">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.28"/>
-      <stop offset="0.6" stop-color="#ffffff" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="frame" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#d9def0"/>
-    </linearGradient>
-    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#1a1d33"/>
-      <stop offset="1" stop-color="#07080f"/>
-    </linearGradient>
-    <radialGradient id="offGlow" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stop-color="#9fd8ff" stop-opacity="0.9"/>
-      <stop offset="0.35" stop-color="#6aa8ff" stop-opacity="0.35"/>
-      <stop offset="1" stop-color="#6aa8ff" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#b9bfd3"/>
-      <stop offset="0.45" stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#aab1c8"/>
-    </linearGradient>
-    <linearGradient id="boot" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#e8ebf6"/>
-      <stop offset="0.5" stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#d3d8ea"/>
-    </linearGradient>
-    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
-      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#0b0630" flood-opacity="0.55"/>
-    </filter>
-    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
-      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#0b0630" flood-opacity="0.45"/>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000" flood-opacity="0.3"/>
     </filter>
     <clipPath id="tileClip"><rect x="100" y="100" width="824" height="824" rx="185"/></clipPath>
   </defs>
 
-  <!-- Tile -->
   <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#tile)" filter="url(#shadow)"/>
-  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#tileGlow)"/>
-  <rect x="101" y="101" width="822" height="822" rx="184" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="2"/>
 
-  <g clip-path="url(#tileClip)">
-    <!-- Cable running out of the bottom of the tile -->
-    <rect x="490" y="840" width="44" height="120" fill="#e3e7f4" filter="url(#soft)"/>
-
-    <!-- USB-C / Thunderbolt plug, pulled away from the display -->
-    <g filter="url(#soft)" transform="translate(0 86)">
-      <rect x="452" y="650" width="120" height="132" rx="30" fill="url(#boot)"/>
-      <rect x="474" y="600" width="76" height="62" rx="20" fill="url(#metal)"/>
-      <rect x="490" y="614" width="44" height="12" rx="6" fill="#8a91aa"/>
-      <!-- bolt -->
-      <path d="M520 676 L494 720 H512 L504 756 L532 708 H514 Z" fill="#6d5dfc"/>
-    </g>
-  </g>
-
-  <!-- Display -->
-  <g filter="url(#shadow)">
-    <rect x="196" y="214" width="632" height="400" rx="46" fill="url(#frame)"/>
-  </g>
-  <rect x="226" y="244" width="572" height="320" rx="22" fill="url(#glass)"/>
-  <!-- port in the chin -->
-  <rect x="482" y="590" width="60" height="14" rx="7" fill="#9aa1ba"/>
-  <!-- "just switched off" line -->
-  <ellipse cx="512" cy="404" rx="250" ry="60" fill="url(#offGlow)"/>
-  <rect x="332" y="401" width="360" height="6" rx="3" fill="#e8f6ff"/>
-  <!-- glass reflection -->
-  <path d="M248 244 H470 L340 564 H248 A22 22 0 0 1 226 542 V266 A22 22 0 0 1 248 244 Z" fill="#ffffff" opacity="0.06"/>
-
-  <!-- gap marks between port and plug -->
-  <g stroke="#ffffff" stroke-width="9" stroke-linecap="round" opacity="0.85">
-    <line x1="512" y1="636" x2="512" y2="662"/>
-    <line x1="470" y1="640" x2="452" y2="660"/>
-    <line x1="554" y1="640" x2="572" y2="660"/>
+  <g clip-path="url(#tileClip)" fill="none" stroke="#ffffff" stroke-width="44" stroke-linecap="round" stroke-linejoin="round">
+    <!-- display -->
+    <rect x="244" y="262" width="536" height="340" rx="48"/>
+    <!-- plug: prongs, body, cable -->
+    <path d="M478 690 v40 M546 690 v40"/>
+    <path d="M440 730 h144 v32 a72 72 0 0 1 -144 0 z" fill="#ffffff"/>
+    <path d="M512 834 v140"/>
   </g>
 </svg>
