@@ -13,4 +13,11 @@ public enum UnplugSettings {
         get { defaults.object(forKey: keyboardBacklightKey) as? Bool ?? true }
         set { defaults.set(newValue, forKey: keyboardBacklightKey) }
     }
+
+    /// The user turned the keyboard light off themselves, so reconnecting the
+    /// built-in display must not switch it back on.
+    static var keyboardBacklightOffByUser: Bool {
+        get { defaults.bool(forKey: "keyboardBacklightOffByUser") }
+        set { defaults.set(newValue, forKey: "keyboardBacklightOffByUser") }
+    }
 }

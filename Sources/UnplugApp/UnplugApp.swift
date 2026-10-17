@@ -65,6 +65,16 @@ final class DisplaysModel: ObservableObject {
         refresh()
     }
 
+    let keyboardBacklightAvailable = KeyboardBacklight.isAvailable
+
+    var keyboardLightOn: Bool {
+        get { !KeyboardBacklight.isOff }
+        set {
+            KeyboardBacklight.setOn(newValue)
+            objectWillChange.send()
+        }
+    }
+
     var keyboardBacklightFollowsBuiltin: Bool {
         get { UnplugSettings.keyboardBacklightFollowsBuiltin }
         set {
@@ -101,7 +111,10 @@ struct MenuContent: View {
         ForEach(builtin) { display in
             Section(display.name) {
                 Toggle("Screen", isOn: connected(display))
-                Toggle("Turn Off Keyboard Light with Screen", isOn: $model.keyboardBacklightFollowsBuiltin)
+                if model.keyboardBacklightAvailable {
+                    Toggle("Keyboard Light", isOn: $model.keyboardLightOn)
+                    Toggle("Turn Off Keyboard Light with Screen", isOn: $model.keyboardBacklightFollowsBuiltin)
+                }
             }
         }
 
