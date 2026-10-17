@@ -197,9 +197,11 @@ struct MenuContent: View {
         if model.displays.contains(where: { !$0.isConnected }) {
             Button("Reconnect All Displays") { model.connectAll() }
         }
-        Toggle("Reconnect Displays on Quit", isOn: $model.reconnectOnQuit)
-        Toggle("Keyboard Shortcuts (⌃⌥⌘U, ⌃⌥⌘B)", isOn: $model.shortcutsEnabled)
-        Toggle("Launch at Login", isOn: $model.launchAtLogin)
+        Menu("Options") {
+            Toggle("Reconnect Displays on Quit", isOn: $model.reconnectOnQuit)
+            Toggle("Keyboard Shortcuts (⌃⌥⌘U, ⌃⌥⌘B)", isOn: $model.shortcutsEnabled)
+            Toggle("Launch at Login", isOn: $model.launchAtLogin)
+        }
         Divider()
         Text("Unplug \(UnplugVersion.current)")
         Button("Quit Unplug") { NSApp.terminate(nil) }

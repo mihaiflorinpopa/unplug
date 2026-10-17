@@ -40,7 +40,7 @@ These work anywhere while Unplug is running:
 - Control-Option-Command-U (⌃⌥⌘U) reconnects every display Unplug disconnected.
 - Control-Option-Command-B (⌃⌥⌘B) turns the built-in screen off or back on.
 
-Untick "Keyboard Shortcuts" in the menu to turn them off.
+Untick Options > "Keyboard Shortcuts" in the menu to turn them off.
 
 ### Safety
 
