@@ -35,7 +35,7 @@ final class MainWindow: NSObject, NSWindowDelegate {
         return window
     }
 
-    /// Picks up changes made elsewhere (the CLI, the brightness keys).
+    /// Picks up changes made elsewhere (the CLI).
     func windowDidBecomeKey(_ notification: Notification) {
         model.refresh()
         model.refreshBrightness()
@@ -65,7 +65,6 @@ struct MainWindowView: View {
             Section("Options") {
                 Toggle("Reconnect Displays on Quit", isOn: $model.reconnectOnQuit)
                 Toggle("Keyboard Shortcuts (⌃⌥⌘U, ⌃⌥⌘B)", isOn: $model.shortcutsEnabled)
-                Toggle("Brightness Keys for External Displays", isOn: $model.brightnessKeysEnabled)
                 Toggle("Launch at Login", isOn: $model.launchAtLogin)
                 Toggle("Show in Menu Bar", isOn: $model.showInMenuBar)
                 Toggle("Show in Dock", isOn: $model.showInDock)
