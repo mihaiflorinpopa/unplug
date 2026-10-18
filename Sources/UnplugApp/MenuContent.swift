@@ -16,10 +16,14 @@ struct DisplaySections: View {
             Section(display.name) {
                 Toggle("Screen", isOn: connected(display))
                 brightnessControl(display)
-                Toggle("Turn Off When a Monitor Connects", isOn: $model.builtinOffWithExternal)
+                OptionToggle(title: "Turn Off When a Monitor Connects", detail: OptionDetail.builtinOffWithExternal,
+                             isOn: $model.builtinOffWithExternal, inMenu: inMenu)
                 if model.keyboardBacklightAvailable {
-                    Toggle("Keyboard Backlight", isOn: $model.keyboardLightOn)
-                    Toggle("Turn Off Keyboard Backlight with Screen", isOn: $model.keyboardBacklightFollowsBuiltin)
+                    OptionToggle(title: "Keyboard Backlight", detail: OptionDetail.keyboardBacklight,
+                                 isOn: $model.keyboardLightOn, inMenu: inMenu)
+                    OptionToggle(title: "Turn Off Keyboard Backlight with Screen",
+                                 detail: OptionDetail.keyboardBacklightFollowsBuiltin,
+                                 isOn: $model.keyboardBacklightFollowsBuiltin, inMenu: inMenu)
                 }
             }
         }
@@ -97,15 +101,21 @@ struct MenuContent: View {
         }
         Menu("Options") {
             Toggle("Reconnect Displays on Quit", isOn: $model.reconnectOnQuit)
+                .help(OptionDetail.reconnectOnQuit)
             Toggle("Keyboard Shortcuts (\(model.shortcutsSummary))", isOn: $model.shortcutsEnabled)
+                .help(OptionDetail.shortcuts)
             Button("Change Keyboard Shortcuts…") { showShortcuts() }
             Toggle("Launch at Login", isOn: $model.launchAtLogin)
+                .help(OptionDetail.launchAtLogin)
             Toggle("Keep Displays Off After Restart", isOn: $model.keepOffAfterRestart)
+                .help(OptionDetail.keepOffAfterRestart)
             Divider()
             Toggle("Show in Dock", isOn: $model.showInDock)
+                .help(OptionDetail.showInDock)
             if updater.isAvailable {
                 Divider()
                 Toggle("Check for Updates Automatically", isOn: $updater.automaticallyChecks)
+                    .help(OptionDetail.automaticUpdates)
             }
         }
         Divider()

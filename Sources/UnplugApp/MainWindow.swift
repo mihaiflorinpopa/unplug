@@ -63,17 +63,23 @@ struct MainWindowView: View {
             }
 
             Section("Options") {
-                Toggle("Reconnect Displays on Quit", isOn: $model.reconnectOnQuit)
+                OptionToggle(title: "Reconnect Displays on Quit", detail: OptionDetail.reconnectOnQuit,
+                             isOn: $model.reconnectOnQuit)
                 ShortcutsSettings(model: model)
-                Toggle("Launch at Login", isOn: $model.launchAtLogin)
-                Toggle("Keep Displays Off After Restart", isOn: $model.keepOffAfterRestart)
-                Toggle("Show in Menu Bar", isOn: $model.showInMenuBar)
-                Toggle("Show in Dock", isOn: $model.showInDock)
+                OptionToggle(title: "Launch at Login", detail: OptionDetail.launchAtLogin,
+                             isOn: $model.launchAtLogin)
+                OptionToggle(title: "Keep Displays Off After Restart", detail: OptionDetail.keepOffAfterRestart,
+                             isOn: $model.keepOffAfterRestart)
+                OptionToggle(title: "Show in Menu Bar", detail: OptionDetail.showInMenuBar,
+                             isOn: $model.showInMenuBar)
+                OptionToggle(title: "Show in Dock", detail: OptionDetail.showInDock,
+                             isOn: $model.showInDock)
             }
 
             Section {
                 if updater.isAvailable {
-                    Toggle("Check for Updates Automatically", isOn: $updater.automaticallyChecks)
+                    OptionToggle(title: "Check for Updates Automatically", detail: OptionDetail.automaticUpdates,
+                                 isOn: $updater.automaticallyChecks)
                 }
                 LabeledContent("Version \(UnplugVersion.current)") {
                     if updater.isAvailable {
