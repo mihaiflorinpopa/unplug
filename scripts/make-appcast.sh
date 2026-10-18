@@ -28,6 +28,12 @@ printf '%s' "$SIGNATURE" | base64 -D > "$TMP/signature"
 
 URL="https://github.com/mihaiflorinpopa/unplug/releases/download/v$VERSION/Unplug-$VERSION.dmg"
 DATE="$(LC_ALL=C date -u '+%a, %d %b %Y %H:%M:%S +0000')"
+# Release notes for the update dialog, as HTML, when CI wrote build/release-notes.html.
+# HTML rather than Markdown, which older installed copies of Sparkle (before 2.9) can't show.
+NOTES=""
+if [ -s build/release-notes.html ]; then
+    NOTES="      <description><![CDATA[$(sed 's/]]>/]]]]><![CDATA[>/g' build/release-notes.html)]]></description>"
+fi
 cat > build/appcast.xml <<XML
 <?xml version="1.0" encoding="utf-8"?>
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
@@ -40,6 +46,7 @@ cat > build/appcast.xml <<XML
       <sparkle:version>$BUILD</sparkle:version>
       <sparkle:shortVersionString>$VERSION</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+$NOTES
       <enclosure url="$URL" $ATTRIBUTES type="application/octet-stream"/>
     </item>
   </channel>

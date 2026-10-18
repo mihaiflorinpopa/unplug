@@ -10,6 +10,11 @@ Unplug makes macOS forget a display, as if you unplugged it, and brings it back 
 
 It's free, open source (MIT) and runs on macOS 13 or later.
 
+<p align="center">
+  <img src="Resources/screenshots/menu.png" alt="Unplug's menu in the menu bar" width="385" align="top">
+  <img src="Resources/screenshots/window.png" alt="Unplug's window" width="300" align="top">
+</p>
+
 ## Install
 
 1. Download `Unplug-<version>.dmg` from [Releases](../../releases/latest).
@@ -81,6 +86,12 @@ The keyboard backlight uses another private call, from CoreBrightness, kept in [
 ```sh
 ./scripts/build-dmg.sh   # builds build/Unplug.app and the .dmg
 swift test               # runs the tests
+```
+
+Unplug logs what it does to the built-in screen, and any display change macOS rejects. To see the last 10 minutes:
+
+```sh
+log show --last 10m --predicate 'subsystem == "io.github.mihaiflorinpopa.unplug"'
 ```
 
 To release, change the version in [`VERSION`](VERSION) and merge to main. CI publishes the GitHub release with the .dmg and the update feed (`appcast.xml`). Updates are checked with [Sparkle](https://sparkle-project.org) and signed with the key in the `SPARKLE_PRIVATE_KEY` repository secret. Its public half is [`Resources/sparkle-public-key.txt`](Resources/sparkle-public-key.txt).
