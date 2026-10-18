@@ -41,7 +41,15 @@ jobs:
         if: env.HAS_SPARKLE_KEY == 'true'
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
-        run: ./scripts/make-appcast.sh
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # The notes GitHub generates for the release, as HTML for the update dialog.
+          # Without them the update still publishes, just with no notes.
+          gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" \
+              -f tag_name="v$(tr -d '[:space:]' < VERSION)" -f target_commitish="$GITHUB_SHA" --jq .body > build/release-notes.md \
+            && gh api markdown -F text=@build/release-notes.md -f mode=gfm -f context="$GITHUB_REPOSITORY" > build/release-notes.html \
+            || rm -f build/release-notes.html
+          ./scripts/make-appcast.sh
       - uses: actions/upload-artifact@v6
         with:
           name: Unplug-dmg

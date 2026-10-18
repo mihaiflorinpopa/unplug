@@ -1,5 +1,6 @@
 import CoreGraphics
 import Foundation
+import os
 
 public enum UnplugError: LocalizedError, Equatable {
     case privateAPIUnavailable
@@ -136,7 +137,6 @@ public final class DisplayManager {
     public func turnOffAgain(uuid: String) -> Bool {
         guard let display = Self.onlineDisplayIDs().compactMap(Display.current).first(where: { $0.uuid == uuid })
         else { return false }
-        guard display.isConnected else { return true }
         do {
             try disconnect(display)
             return true
@@ -174,17 +174,25 @@ public final class DisplayManager {
     static func transaction(_ body: (CGDisplayConfigRef?) -> CGError) throws {
         var config: CGDisplayConfigRef?
         var error = CGBeginDisplayConfiguration(&config)
-        guard error == .success else { throw UnplugError.coreGraphics(error) }
+        guard error == .success else { throw failure(error, step: "begin") }
 
         error = body(config)
         guard error == .success else {
             CGCancelDisplayConfiguration(config)
-            throw UnplugError.coreGraphics(error)
+            throw failure(error, step: "change")
         }
 
         error = CGCompleteDisplayConfiguration(config, .forSession)
-        guard error == .success else { throw UnplugError.coreGraphics(error) }
+        guard error == .success else { throw failure(error, step: "complete") }
     }
+
+    /// Logs the CGError, which the messages shown to the user leave out.
+    private static func failure(_ error: CGError, step: String) -> UnplugError {
+        log.error("Display configuration failed at \(step, privacy: .public): CGError \(error.rawValue)")
+        return .coreGraphics(error)
+    }
+
+    private static let log = Logger(subsystem: UnplugSettings.domain, category: "displays")
 
     static func onlineDisplayIDs() -> [CGDirectDisplayID] {
         displayList(CGGetOnlineDisplayList)

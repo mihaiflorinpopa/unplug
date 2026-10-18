@@ -1,5 +1,6 @@
 import AppKit
 import Carbon.HIToolbox
+import os
 import ServiceManagement
 import SwiftUI
 import UnplugCore
@@ -37,14 +38,13 @@ final class DisplaysModel: ObservableObject {
     /// Displays still to turn off again after a restart. Some monitors come
     /// online a moment after login, so this is retried on each display change.
     private var pendingTurnOff: Set<String> = []
-    /// External displays that were on at the last display change, to notice one
-    /// being plugged in or the last one going away.
-    private var externalCount = 0
-    /// Set when the last external display goes away while the built-in screen
-    /// is off, until the built-in screen is back on.
-    private var builtinRestorePending = false
+    /// Decides when the built-in screen turns off or back on with monitors.
+    private var follower = BuiltinFollower([])
     private var builtinRestoreRetry: Task<Void, Never>?
-    private var wakeObserver: NSObjectProtocol?
+    private var wakeObservers: [NSObjectProtocol] = []
+    /// What Unplug did to the built-in screen and why. See it with
+    /// `log show --last 10m --predicate 'subsystem == "io.github.mihaiflorinpopa.unplug"'`.
+    private let log = Logger(subsystem: "io.github.mihaiflorinpopa.unplug", category: "displays")
 
     init() {
         if UnplugSettings.keepOffAfterRestart {
@@ -52,7 +52,7 @@ final class DisplaysModel: ObservableObject {
             turnOffPending()
         }
         refresh()
-        externalCount = displays.filter { !$0.isBuiltin && $0.isConnected }.count
+        follower = BuiltinFollower(displays)
         monitor = DisplayMonitor { [weak self] in
             Task { @MainActor in
                 self?.turnOffPending()
@@ -72,14 +72,15 @@ final class DisplaysModel: ObservableObject {
                 self?.objectWillChange.send()
             }
         }
-        // A Mac left with no screen can go to display sleep before the built-in
-        // screen comes back, so check again when displays wake.
-        wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
-            forName: NSWorkspace.screensDidWakeNotification, object: nil, queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in
-                self?.refresh()
-                self?.followExternalDisplays()
+        // A Mac left with no screen can go to display sleep, or sleep entirely
+        // with the lid closed, before the built-in screen comes back, so check
+        // again when displays or the Mac wake.
+        wakeObservers = [NSWorkspace.screensDidWakeNotification, NSWorkspace.didWakeNotification].map {
+            NSWorkspace.shared.notificationCenter.addObserver(forName: $0, object: nil, queue: .main) { [weak self] _ in
+                Task { @MainActor in
+                    self?.refresh()
+                    self?.followExternalDisplays()
+                }
             }
         }
         applyShortcuts()
@@ -141,20 +142,21 @@ final class DisplaysModel: ObservableObject {
     /// back when the last external display goes away, so the Mac is never left
     /// without a screen.
     private func followExternalDisplays() {
-        let externals = displays.filter { !$0.isBuiltin && $0.isConnected }.count
-        defer { externalCount = externals }
-        guard let builtin = displays.first(where: \.isBuiltin) else { return }
-        if externals > 0 {
-            builtinRestorePending = false
-            builtinRestoreRetry?.cancel()
-        } else if externalCount > 0, !builtin.isConnected {
-            builtinRestorePending = true
-        }
-        if builtinRestorePending {
+        switch follower.update(displays, turnOffWithExternal: UnplugSettings.builtinOffWithExternal) {
+        case .turnOn:
+            log.notice("No monitor is on and the built-in screen is off, so it's turning back on")
             restoreBuiltin(attempt: 0)
-        } else if externalCount == 0, externals > 0, builtin.isConnected, UnplugSettings.builtinOffWithExternal {
-            try? manager.disconnect(builtin)
+        case .turnOff:
+            guard let builtin = displays.first(where: \.isBuiltin) else { return }
+            do {
+                try manager.disconnect(builtin)
+                log.notice("A monitor connected, so the built-in screen turned off")
+            } catch {
+                log.error("Couldn't turn the built-in screen off: \(error.localizedDescription, privacy: .public)")
+            }
             refresh()
+        case .none:
+            builtinRestoreRetry?.cancel()
         }
     }
 
@@ -164,16 +166,21 @@ final class DisplaysModel: ObservableObject {
     /// change or wake. Nothing runs once it succeeds.
     private func restoreBuiltin(attempt: Int) {
         builtinRestoreRetry?.cancel()
-        guard builtinRestorePending, let builtin = displays.first(where: \.isBuiltin) else { return }
+        guard follower.restorePending, let builtin = displays.first(where: \.isBuiltin) else { return }
         guard !builtin.isConnected else {
-            builtinRestorePending = false
+            follower.restored()
             return
         }
         do {
             try manager.connect(builtin)
-            builtinRestorePending = false
+            follower.restored()
+            log.notice("The built-in screen is back on (try \(attempt + 1))")
         } catch {
-            guard attempt < 5 else { return }
+            log.error("Try \(attempt + 1) to turn the built-in screen on failed: \(error.localizedDescription, privacy: .public)")
+            guard attempt < 5 else {
+                log.error("Gave up for now; trying again on the next display change or wake")
+                return
+            }
             builtinRestoreRetry = Task { @MainActor [weak self] in
                 try? await Task.sleep(nanoseconds: UInt64(attempt + 1) * 1_000_000_000)
                 guard !Task.isCancelled, let self else { return }
@@ -345,6 +352,11 @@ final class DisplaysModel: ObservableObject {
                 }
             } catch {
                 lastError = error.localizedDescription
+            }
+            // macOS can hold a new login item until the user allows it.
+            if newValue && SMAppService.mainApp.status == .requiresApproval {
+                lastError = "Allow Unplug under Login Items in System Settings so it can open at login."
+                SMAppService.openSystemSettingsLoginItems()
             }
             objectWillChange.send()
         }
