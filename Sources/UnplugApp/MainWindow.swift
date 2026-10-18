@@ -63,23 +63,17 @@ struct MainWindowView: View {
             }
 
             Section("Options") {
-                OptionToggle(title: "Reconnect Displays on Quit", detail: OptionDetail.reconnectOnQuit,
-                             isOn: $model.reconnectOnQuit)
+                OptionToggle(option: .reconnectOnQuit, isOn: $model.reconnectOnQuit)
                 ShortcutsSettings(model: model)
-                OptionToggle(title: "Launch at Login", detail: OptionDetail.launchAtLogin,
-                             isOn: $model.launchAtLogin)
-                OptionToggle(title: "Keep Displays Off After Restart", detail: OptionDetail.keepOffAfterRestart,
-                             isOn: $model.keepOffAfterRestart)
-                OptionToggle(title: "Show in Menu Bar", detail: OptionDetail.showInMenuBar,
-                             isOn: $model.showInMenuBar)
-                OptionToggle(title: "Show in Dock", detail: OptionDetail.showInDock,
-                             isOn: $model.showInDock)
+                OptionToggle(option: .launchAtLogin, isOn: $model.launchAtLogin)
+                OptionToggle(option: .keepOffAfterRestart, isOn: $model.keepOffAfterRestart)
+                OptionToggle(option: .showInMenuBar, isOn: $model.showInMenuBar)
+                OptionToggle(option: .showInDock, isOn: $model.showInDock)
             }
 
             Section {
                 if updater.isAvailable {
-                    OptionToggle(title: "Check for Updates Automatically", detail: OptionDetail.automaticUpdates,
-                                 isOn: $updater.automaticallyChecks)
+                    OptionToggle(option: .automaticUpdates, isOn: $updater.automaticallyChecks)
                 }
                 LabeledContent("Version \(UnplugVersion.current)") {
                     if updater.isAvailable {
@@ -91,5 +85,60 @@ struct MainWindowView: View {
         }
         .formStyle(.grouped)
         .frame(minWidth: 380, minHeight: 420)
+    }
+}
+
+/// The display controls in the window, built-in screen first.
+struct DisplaySections: View {
+    @ObservedObject var model: DisplaysModel
+
+    private var builtin: [Display] { model.displays.filter(\.isBuiltin) }
+    private var external: [Display] { model.displays.filter { !$0.isBuiltin } }
+
+    var body: some View {
+        // The built-in display and the keyboard backlight it controls, together.
+        ForEach(builtin) { display in
+            Section(display.name) {
+                Toggle("Screen", isOn: model.connected(display))
+                brightnessSlider(display)
+                OptionToggle(option: .builtinOffWithExternal, isOn: $model.builtinOffWithExternal)
+                if model.keyboardBacklightAvailable {
+                    OptionToggle(option: .keyboardBacklight, isOn: $model.keyboardLightOn)
+                    OptionToggle(option: .keyboardBacklightFollowsBuiltin, isOn: $model.keyboardBacklightFollowsBuiltin)
+                }
+            }
+        }
+
+        if !external.isEmpty {
+            Section("External Displays") {
+                ForEach(external) { display in
+                    Toggle(display.name, isOn: model.connected(display))
+                    brightnessSlider(display)
+                    if model.unreachable.contains(display.uuid) {
+                        Button("Forget \(display.name)") { model.forget(display) }
+                    }
+                }
+            }
+        }
+    }
+
+    /// Hidden for displays without brightness control.
+    @ViewBuilder
+    private func brightnessSlider(_ display: Display) -> some View {
+        if display.isConnected, let level = model.brightness[display.uuid] {
+            HStack {
+                Image(systemName: "sun.min")
+                Slider(
+                    value: Binding(
+                        get: { model.brightness[display.uuid] ?? level },
+                        set: { model.setBrightness(display, $0) }),
+                    in: 0...1
+                )
+                Text("\(Int((level * 100).rounded()))%")
+                    .monospacedDigit()
+                    .frame(width: 44, alignment: .trailing)
+            }
+            .accessibilityLabel("\(display.name) brightness")
+        }
     }
 }

@@ -11,8 +11,8 @@ Unplug makes macOS forget a display, as if you unplugged it, and brings it back 
 It's free, open source (MIT) and runs on macOS 13 or later.
 
 <p align="center">
-  <img src="Resources/screenshots/menu.png" alt="Unplug's menu in the menu bar" width="385" align="top">
-  <img src="Resources/screenshots/window.png" alt="Unplug's window" width="300" align="top">
+  <img src="Resources/screenshots/menu.png" alt="Unplug's menu in the menu bar" width="272" align="top">
+  <img src="Resources/screenshots/window.png" alt="Unplug's Settings window" width="300" align="top">
 </p>
 
 ## Install
@@ -28,13 +28,13 @@ You only need step 3 once. After that, Unplug updates itself.
 Click the display icon in the menu bar:
 
 - **Turn a display off or on** by clicking its name.
-- **Brightness:** set each display's brightness, from the menu or with a slider in the window. Works for the built-in screen, Apple displays, and most other monitors (through DDC on Apple Silicon Macs).
-- **Built-in screen:** on a MacBook you can also turn the keyboard backlight off, and have it go off with the screen. "Turn Off When a Monitor Connects" switches the built-in screen off whenever you plug in a monitor. It always comes back when the last monitor is unplugged.
+- **Brightness:** set each display's brightness, from the menu or with a slider in Settings. Works for the built-in screen, Apple displays, and most other monitors (through DDC on Apple Silicon Macs).
+- **Keyboard Backlight:** on a MacBook, turn it on or off.
 - **Reconnect All Displays** brings everything back.
-- **Options** has launch at login, keyboard shortcuts you can change, "Keep Displays Off After Restart", and "Show in Dock" if you'd rather use Unplug as a regular app with a window.
-- **Unplug Help** and **About Unplug** are at the bottom of the menu.
+- **Settings…** (⌘,) has every option, each with a short description: "Turn Off When a Monitor Connects" (the built-in screen always comes back when the last monitor is unplugged), the keyboard backlight going off with the screen, launch at login, keyboard shortcuts you can change, "Keep Displays Off After Restart", and "Show in Dock" if you'd rather use Unplug as a regular app with a window.
+- **About Unplug** and **Unplug Help** are at the bottom of the menu.
 
-Keyboard shortcuts work anywhere. These are the defaults, and you can change them under Options:
+Keyboard shortcuts work anywhere. These are the defaults, and you can change them in Settings:
 
 | Shortcut | Does |
 | --- | --- |

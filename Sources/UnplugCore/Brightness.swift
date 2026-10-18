@@ -61,22 +61,20 @@ public final class Brightness: @unchecked Sendable {
         }
         // Without a location match, pair only when there's no doubt: one
         // external display that needs DDC and one DDC channel.
-        let ddcDisplays = Self.onlineExternalDisplays().filter { DisplayServices.get($0) == nil }
+        let ddcDisplays = DisplayManager.onlineDisplayIDs().filter { CGDisplayIsBuiltin($0) == 0 && DisplayServices.get($0) == nil }
         if ddcDisplays == [displayID], byLocation.count == 1, let service = byLocation.values.first {
             services[displayID] = service
             return service
         }
         return nil
     }
+}
 
-    private static func onlineExternalDisplays() -> [CGDirectDisplayID] {
-        var count: UInt32 = 0
-        guard CGGetOnlineDisplayList(0, nil, &count) == .success, count > 0 else { return [] }
-        let capacity = count
-        var ids = [CGDirectDisplayID](repeating: 0, count: Int(capacity))
-        guard CGGetOnlineDisplayList(capacity, &ids, &count) == .success else { return [] }
-        return ids.prefix(Int(count)).filter { CGDisplayIsBuiltin($0) == 0 }
-    }
+/// A function from a system framework, looked up at runtime so a missing
+/// framework or symbol only turns the feature off.
+private func symbol<T>(_ library: String, _ name: String, as _: T.Type) -> T? {
+    guard let handle = dlopen(library, RTLD_LAZY), let pointer = dlsym(handle, name) else { return nil }
+    return unsafeBitCast(pointer, to: T.self)
 }
 
 /// The DisplayServices private framework.
@@ -85,17 +83,10 @@ private enum DisplayServices {
     private typealias Get = @convention(c) (CGDirectDisplayID, UnsafeMutablePointer<Float>) -> Int32
     private typealias Set = @convention(c) (CGDirectDisplayID, Float) -> Int32
 
-    private static let handle = dlopen(
-        "/System/Library/PrivateFrameworks/DisplayServices.framework/DisplayServices", RTLD_LAZY)
-
-    private static func symbol<T>(_ name: String, as _: T.Type) -> T? {
-        guard let handle, let pointer = dlsym(handle, name) else { return nil }
-        return unsafeBitCast(pointer, to: T.self)
-    }
-
-    private static let canChange = symbol("DisplayServicesCanChangeBrightness", as: CanChange.self)
-    private static let getBrightness = symbol("DisplayServicesGetBrightness", as: Get.self)
-    private static let setBrightness = symbol("DisplayServicesSetBrightness", as: Set.self)
+    private static let library = "/System/Library/PrivateFrameworks/DisplayServices.framework/DisplayServices"
+    private static let canChange = symbol(library, "DisplayServicesCanChangeBrightness", as: CanChange.self)
+    private static let getBrightness = symbol(library, "DisplayServicesGetBrightness", as: Get.self)
+    private static let setBrightness = symbol(library, "DisplayServicesSetBrightness", as: Set.self)
 
     static func get(_ id: CGDirectDisplayID) -> Double? {
         guard let canChange, let getBrightness, canChange(id) else { return nil }
@@ -117,11 +108,6 @@ private enum DDC {
     private typealias ReadI2C = @convention(c) (CFTypeRef, UInt32, UInt32, UnsafeMutableRawPointer, UInt32) -> IOReturn
     private typealias WriteI2C = @convention(c) (CFTypeRef, UInt32, UInt32, UnsafeMutableRawPointer, UInt32) -> IOReturn
     private typealias CreateInfoDictionary = @convention(c) (CGDirectDisplayID) -> Unmanaged<CFDictionary>?
-
-    private static func symbol<T>(_ library: String, _ name: String, as _: T.Type) -> T? {
-        guard let handle = dlopen(library, RTLD_LAZY), let pointer = dlsym(handle, name) else { return nil }
-        return unsafeBitCast(pointer, to: T.self)
-    }
 
     private static let iokit = "/System/Library/Frameworks/IOKit.framework/IOKit"
     private static let createWithService = symbol(iokit, "IOAVServiceCreateWithService", as: CreateWithService.self)

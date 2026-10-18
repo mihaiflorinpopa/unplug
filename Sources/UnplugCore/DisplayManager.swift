@@ -192,7 +192,9 @@ public final class DisplayManager {
         return .coreGraphics(error)
     }
 
-    private static let log = Logger(subsystem: UnplugSettings.domain, category: "displays")
+    /// What Unplug did to displays and why. See it with
+    /// `log show --last 10m --predicate 'subsystem == "io.github.mihaiflorinpopa.unplug"'`.
+    public static let log = Logger(subsystem: UnplugSettings.domain, category: "displays")
 
     static func onlineDisplayIDs() -> [CGDirectDisplayID] {
         displayList(CGGetOnlineDisplayList)
