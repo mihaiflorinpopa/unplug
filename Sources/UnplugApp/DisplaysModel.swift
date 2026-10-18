@@ -141,6 +141,8 @@ final class DisplaysModel: ObservableObject {
     /// back when the last external display goes away, so the Mac is never left
     /// without a screen.
     private func followExternalDisplays() {
+        let monitors = displays.filter { !$0.isBuiltin && $0.isConnected }.count
+        log.notice("Displays changed: \(monitors) monitor(s) on, built-in screen \(self.builtin?.isConnected == true ? "on" : "off", privacy: .public)")
         switch follower.update(displays, turnOffWithExternal: UnplugSettings.builtinOffWithExternal) {
         case .turnOn:
             log.notice("No monitor is on and the built-in screen is off, so it's turning back on")

@@ -212,6 +212,18 @@ public final class DisplayManager {
         let capacity = count
         var ids = [CGDirectDisplayID](repeating: 0, count: Int(capacity))
         guard get(capacity, &ids, &count) == .success else { return [] }
-        return Array(ids.prefix(Int(count)))
+        return ids.prefix(Int(count)).filter {
+            !isPlaceholder(vendor: CGDisplayVendorNumber($0), model: CGDisplayModelNumber($0))
+        }
+    }
+
+    /// When the last screen goes away (the last monitor unplugged while the
+    /// built-in screen is off), WindowServer adds a virtual stand-in display
+    /// with vendor "unkn" and model "virt" and makes it the main display. It
+    /// isn't a screen anyone can see, so Unplug leaves it out of every list;
+    /// otherwise it would count as a monitor and the built-in screen would
+    /// never come back.
+    static func isPlaceholder(vendor: UInt32, model: UInt32) -> Bool {
+        vendor == 0x756E_6B6E && model == 0x7669_7274 // "unkn", "virt"
     }
 }
