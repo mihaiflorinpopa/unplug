@@ -6,6 +6,9 @@ import Foundation
 /// reconfiguration callback rather than polling.
 public final class DisplayMonitor {
     private let onChange: () -> Void
+    /// Set while a call to `onChange` is queued, so the calls macOS makes for
+    /// each display in one change lead to one refresh, not one per display.
+    private var changeQueued = false
 
     public init(onChange: @escaping () -> Void) {
         self.onChange = onChange
@@ -21,6 +24,14 @@ public final class DisplayMonitor {
         // display after it; only the "after" calls describe the new state.
         guard !flags.contains(.beginConfigurationFlag), let userInfo else { return }
         let monitor = Unmanaged<DisplayMonitor>.fromOpaque(userInfo).takeUnretainedValue()
-        DispatchQueue.main.async { monitor.onChange() }
+        // The calls arrive on the main thread, where the app registered, so the
+        // flag needs no lock. It's cleared before `onChange` runs, so a change
+        // that comes in meanwhile queues its own refresh.
+        guard !monitor.changeQueued else { return }
+        monitor.changeQueued = true
+        DispatchQueue.main.async {
+            monitor.changeQueued = false
+            monitor.onChange()
+        }
     }
 }
