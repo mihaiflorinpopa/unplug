@@ -50,7 +50,8 @@ struct Shortcut: Codable, Equatable {
         return text + key
     }
 
-    private static let functionKeys: Set<Int> = [
+    /// F1 to F20, in order.
+    private static let functionKeys = [
         kVK_F1, kVK_F2, kVK_F3, kVK_F4, kVK_F5, kVK_F6, kVK_F7, kVK_F8, kVK_F9, kVK_F10,
         kVK_F11, kVK_F12, kVK_F13, kVK_F14, kVK_F15, kVK_F16, kVK_F17, kVK_F18, kVK_F19, kVK_F20,
     ]
@@ -61,10 +62,6 @@ struct Shortcut: Codable, Equatable {
             kVK_Space: "Space", kVK_Return: "↩", kVK_Tab: "⇥", kVK_Delete: "⌫", kVK_ForwardDelete: "⌦",
             kVK_LeftArrow: "←", kVK_RightArrow: "→", kVK_UpArrow: "↑", kVK_DownArrow: "↓",
             kVK_Home: "↖", kVK_End: "↘", kVK_PageUp: "⇞", kVK_PageDown: "⇟",
-        ]
-        let functionKeys = [
-            kVK_F1, kVK_F2, kVK_F3, kVK_F4, kVK_F5, kVK_F6, kVK_F7, kVK_F8, kVK_F9, kVK_F10,
-            kVK_F11, kVK_F12, kVK_F13, kVK_F14, kVK_F15, kVK_F16, kVK_F17, kVK_F18, kVK_F19, kVK_F20,
         ]
         for (index, code) in functionKeys.enumerated() { keys[code] = "F\(index + 1)" }
         return keys
@@ -123,13 +120,12 @@ struct ShortcutRecorder: View {
     }
 }
 
-/// The keyboard shortcut settings, shown in the window and in their own
-/// window from the menu.
+/// The keyboard shortcut settings in the window.
 struct ShortcutsSettings: View {
     @ObservedObject var model: DisplaysModel
 
     var body: some View {
-        OptionToggle(title: "Keyboard Shortcuts", detail: OptionDetail.shortcuts, isOn: $model.shortcutsEnabled)
+        OptionToggle(option: .shortcuts, isOn: $model.shortcutsEnabled)
         if model.shortcutsEnabled {
             ShortcutRecorder(
                 title: "Reconnect all displays", shortcut: $model.reconnectAllShortcut,

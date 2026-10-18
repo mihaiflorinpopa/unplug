@@ -1,8 +1,8 @@
 import CoreGraphics
 import Foundation
 
-/// The only private API Unplug uses, isolated here so it is easy to audit and to
-/// fix if Apple changes it.
+/// The only private API Unplug uses to disconnect displays, isolated here so it
+/// is easy to audit and to fix if Apple changes it.
 ///
 /// `CGSConfigureDisplayEnabled` is exported by CoreGraphics (re-exported from
 /// SkyLight). It adds an "enabled" change to a regular, documented display

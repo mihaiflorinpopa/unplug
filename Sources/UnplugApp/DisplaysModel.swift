@@ -28,7 +28,7 @@ final class DisplaysModel: ObservableObject {
     private var menuObserver: NSObjectProtocol?
     private let brightnessControl = Brightness()
     /// DDC can take a moment per call, so brightness I/O runs on its own queue.
-    private let brightnessQueue = DispatchQueue(label: "io.github.mihaiflorinpopa.unplug.brightness")
+    private let brightnessQueue = DispatchQueue(label: "\(UnplugSettings.domain).brightness")
     private var pendingBrightness: [String: (Display, Double)] = [:]
 
     /// Called when "Show in Dock" changes, so the app delegate can switch between
@@ -42,9 +42,8 @@ final class DisplaysModel: ObservableObject {
     private var follower = BuiltinFollower([])
     private var builtinRestoreRetry: Task<Void, Never>?
     private var wakeObservers: [NSObjectProtocol] = []
-    /// What Unplug did to the built-in screen and why. See it with
-    /// `log show --last 10m --predicate 'subsystem == "io.github.mihaiflorinpopa.unplug"'`.
-    private let log = Logger(subsystem: "io.github.mihaiflorinpopa.unplug", category: "displays")
+    private let log = DisplayManager.log
+    private var builtin: Display? { displays.first(where: \.isBuiltin) }
 
     init() {
         if UnplugSettings.keepOffAfterRestart {
@@ -147,7 +146,7 @@ final class DisplaysModel: ObservableObject {
             log.notice("No monitor is on and the built-in screen is off, so it's turning back on")
             restoreBuiltin(attempt: 0)
         case .turnOff:
-            guard let builtin = displays.first(where: \.isBuiltin) else { return }
+            guard let builtin else { return }
             do {
                 try manager.disconnect(builtin)
                 log.notice("A monitor connected, so the built-in screen turned off")
@@ -166,7 +165,7 @@ final class DisplaysModel: ObservableObject {
     /// change or wake. Nothing runs once it succeeds.
     private func restoreBuiltin(attempt: Int) {
         builtinRestoreRetry?.cancel()
-        guard follower.restorePending, let builtin = displays.first(where: \.isBuiltin) else { return }
+        guard follower.restorePending, let builtin else { return }
         guard !builtin.isConnected else {
             follower.restored()
             return
@@ -206,6 +205,11 @@ final class DisplaysModel: ObservableObject {
         refresh()
     }
 
+    /// A display's on/off state for a toggle in the menu or the window.
+    func connected(_ display: Display) -> Binding<Bool> {
+        Binding(get: { display.isConnected }, set: { self.setConnected(display, $0) })
+    }
+
     func connectAll() {
         let failures = manager.connectAll()
         lastError = failures.first.map { $0.1.localizedDescription }
@@ -221,8 +225,8 @@ final class DisplaysModel: ObservableObject {
     }
 
     func toggleBuiltin() {
-        guard let display = displays.first(where: \.isBuiltin) else { return NSSound.beep() }
-        setConnected(display, !display.isConnected)
+        guard let builtin else { return NSSound.beep() }
+        setConnected(builtin, !builtin.isConnected)
         if lastError != nil { NSSound.beep() }
     }
 
@@ -263,11 +267,6 @@ final class DisplaysModel: ObservableObject {
     var toggleBuiltinShortcut: Shortcut {
         get { Self.loadShortcut("shortcut.toggleBuiltin") ?? .toggleBuiltin }
         set { saveShortcut(newValue, "shortcut.toggleBuiltin") }
-    }
-
-    /// Both shortcuts as shown in the menu, such as "⌃⌥⌘U, ⌃⌥⌘B".
-    var shortcutsSummary: String {
-        "\(reconnectAllShortcut.description), \(toggleBuiltinShortcut.description)"
     }
 
     /// Lets the shortcut recorder see keys that are currently shortcuts.

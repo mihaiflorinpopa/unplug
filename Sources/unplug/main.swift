@@ -24,8 +24,12 @@ options:
   --version                    Print the version
 """
 
-func fail(_ message: String) -> Never {
+func warn(_ message: String) {
     FileHandle.standardError.write(Data("unplug: \(message)\n".utf8))
+}
+
+func fail(_ message: String) -> Never {
+    warn(message)
     exit(1)
 }
 
@@ -94,7 +98,7 @@ case "connect", "on":
     if flags.contains("--all") {
         let failures = manager.connectAll()
         for (d, error) in failures {
-            FileHandle.standardError.write(Data("unplug: \(d.name): \(error.localizedDescription)\n".utf8))
+            warn("\(d.name): \(error.localizedDescription)")
         }
         exit(failures.isEmpty ? 0 : 1)
     }
