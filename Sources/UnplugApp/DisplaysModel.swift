@@ -40,6 +40,11 @@ final class DisplaysModel: ObservableObject {
     /// External displays that were on at the last display change, to notice one
     /// being plugged in or the last one going away.
     private var externalCount = 0
+    /// Set when the last external display goes away while the built-in screen
+    /// is off, until the built-in screen is back on.
+    private var builtinRestorePending = false
+    private var builtinRestoreRetry: Task<Void, Never>?
+    private var wakeObserver: NSObjectProtocol?
 
     init() {
         if UnplugSettings.keepOffAfterRestart {
@@ -65,6 +70,16 @@ final class DisplaysModel: ObservableObject {
                 self?.refresh()
                 self?.refreshBrightness()
                 self?.objectWillChange.send()
+            }
+        }
+        // A Mac left with no screen can go to display sleep before the built-in
+        // screen comes back, so check again when displays wake.
+        wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.screensDidWakeNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.refresh()
+                self?.followExternalDisplays()
             }
         }
         applyShortcuts()
@@ -129,13 +144,44 @@ final class DisplaysModel: ObservableObject {
         let externals = displays.filter { !$0.isBuiltin && $0.isConnected }.count
         defer { externalCount = externals }
         guard let builtin = displays.first(where: \.isBuiltin) else { return }
-        if externalCount > 0, externals == 0, !builtin.isConnected {
-            try? manager.connect(builtin)
-            refresh()
+        if externals > 0 {
+            builtinRestorePending = false
+            builtinRestoreRetry?.cancel()
+        } else if externalCount > 0, !builtin.isConnected {
+            builtinRestorePending = true
+        }
+        if builtinRestorePending {
+            restoreBuiltin(attempt: 0)
         } else if externalCount == 0, externals > 0, builtin.isConnected, UnplugSettings.builtinOffWithExternal {
             try? manager.disconnect(builtin)
             refresh()
         }
+    }
+
+    /// Turns the built-in screen back on. Right after the last monitor goes,
+    /// macOS can still be reconfiguring and reject the change, so a failed try
+    /// is repeated a few times, a few seconds apart, and on the next display
+    /// change or wake. Nothing runs once it succeeds.
+    private func restoreBuiltin(attempt: Int) {
+        builtinRestoreRetry?.cancel()
+        guard builtinRestorePending, let builtin = displays.first(where: \.isBuiltin) else { return }
+        guard !builtin.isConnected else {
+            builtinRestorePending = false
+            return
+        }
+        do {
+            try manager.connect(builtin)
+            builtinRestorePending = false
+        } catch {
+            guard attempt < 5 else { return }
+            builtinRestoreRetry = Task { @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: UInt64(attempt + 1) * 1_000_000_000)
+                guard !Task.isCancelled, let self else { return }
+                self.refresh()
+                self.restoreBuiltin(attempt: attempt + 1)
+            }
+        }
+        refresh()
     }
 
     func setConnected(_ display: Display, _ connected: Bool) {
