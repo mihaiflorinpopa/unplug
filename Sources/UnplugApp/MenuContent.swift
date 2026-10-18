@@ -5,9 +5,8 @@ import UnplugCore
 /// The menu bar menu: only what's used often. Every option is in Settings.
 struct MenuContent: View {
     @ObservedObject var model: DisplaysModel
-    let showSettings: () -> Void
     let showAbout: () -> Void
-    let showHelp: () -> Void
+    @Environment(\.openSettings) private var openSettings
 
     var body: some View {
         Section("Displays") {
@@ -36,10 +35,15 @@ struct MenuContent: View {
         }
 
         Divider()
-        Button("Settings…") { showSettings() }
-            .keyboardShortcut(",")
+        Button("Settings…") {
+            // A menu bar app isn't active, so bring it forward with its Settings window.
+            NSApp.activate()
+            openSettings()
+        }
+        .keyboardShortcut(",")
         Button("About Unplug") { showAbout() }
-        Button("Unplug Help") { showHelp() }
+        // Opens the Help Book that Info.plist names.
+        Button("Unplug Help") { NSApp.showHelp(nil) }
         Button("Quit Unplug") { NSApp.terminate(nil) }
             .keyboardShortcut("q")
     }

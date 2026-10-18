@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "Unplug",
-    platforms: [.macOS(.v13)],
+    platforms: [.macOS(.v14)],
     products: [
         .executable(name: "unplug", targets: ["unplug"]),
         .executable(name: "UnplugApp", targets: ["UnplugApp"]),

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="AppleTitle" content="Unplug Help">
+<meta name="robots" content="anchors">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="Turn a display off and on without pulling the cable, set its brightness, and change Unplug's settings.">
+<title>Unplug Help</title>
+<style>
+body { font-family: -apple-system, "Helvetica Neue", sans-serif; font-size: 13px; line-height: 1.5; margin: 24px 32px; max-width: 640px; }
+h1 { font-size: 22px; margin-bottom: 4px; }
+h2 { font-size: 15px; margin: 24px 0 4px; }
+p { margin: 4px 0; }
+dl { margin: 4px 0; }
+dt { font-weight: 600; margin-top: 8px; }
+dd { margin: 0; }
+code { font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+<h1>Unplug Help</h1>
+<p>Unplug makes macOS forget a display, as if you unplugged it, and brings it back with one click. The cable stays in, so the monitor can keep charging your Mac and powering its USB hub while its screen is off.</p>
+
+<h2><a name="turn-off"></a>Turn a display off or on</h2>
+<p>Click the display icon in the menu bar, then click the display's name. A checkmark means the display is on.</p>
+
+<h2><a name="brightness"></a>Brightness</h2>
+<p>Each display that supports it has a brightness control: a Brightness submenu under its name in the menu, and a slider in Settings &gt; Displays. It works for the built-in screen, Apple displays and most other monitors. Monitors that don't answer brightness commands don't show one.</p>
+
+<h2><a name="keyboard"></a>Keyboard backlight</h2>
+<p>On a MacBook, choose Keyboard Backlight in the menu to turn the backlight on or off. In Settings &gt; Displays you can also have it go off with the built-in screen and come back with it.</p>
+
+<h2><a name="monitor-connects"></a>Built-in screen and monitors</h2>
+<p>Turn on Turn Off When a Monitor Connects in Settings &gt; Displays to switch the built-in screen off whenever you plug in a monitor. Whatever the setting, the built-in screen always comes back on when the last monitor is unplugged.</p>
+
+<h2><a name="shortcuts"></a>Keyboard shortcuts</h2>
+<p>Control-Option-Command-U (⌃⌥⌘U) reconnects every display. Control-Option-Command-B (⌃⌥⌘B) turns the built-in screen off or on. They work in any app. Change them or turn them off in Settings &gt; Shortcuts.</p>
+
+<h2><a name="settings"></a>Settings</h2>
+<p>Choose Settings in the menu, or press Command-Comma (⌘,). Settings opens on the pane you used last.</p>
+<dl>
+<dt>Displays</dt>
+<dd>Each display's on/off switch and brightness slider, plus Turn Off When a Monitor Connects, Keyboard Backlight and Turn Off Keyboard Backlight with Screen.</dd>
+<dt>Reconnect Displays on Quit</dt>
+<dd>Quitting Unplug turns every display back on.</dd>
+<dt>Launch at Login</dt>
+<dd>Opens Unplug when you log in. If macOS asks you to allow it, turn Unplug on in System Settings &gt; General &gt; Login Items.</dd>
+<dt>Keep Displays Off After Restart</dt>
+<dd>Turns the displays you left off back off when Unplug opens at login. It never turns off your last screen.</dd>
+<dt>Show in Menu Bar</dt>
+<dd>Shows Unplug's icon in the menu bar.</dd>
+<dt>Show in Dock</dt>
+<dd>Uses Unplug as a regular app, with a Dock icon and a window.</dd>
+<dt>Check for Updates Automatically</dt>
+<dd>Checks for a new version once a day and asks before installing it.</dd>
+<dt>Shortcuts</dt>
+<dd>The keyboard shortcuts above. Click one to change it.</dd>
+</dl>
+
+<h2><a name="dock"></a>Use Unplug from the Dock</h2>
+<p>Turn on Show in Dock in Settings &gt; General. Click Unplug's Dock icon to open its window, or Control-click the icon to turn a display off or on from the Dock menu. You can then turn off Show in Menu Bar if you don't want the menu bar icon.</p>
+
+<h2><a name="restart"></a>After a restart</h2>
+<p>Logging out or restarting brings every display back. Turn on Keep Displays Off After Restart and Unplug turns the displays you left off back off when it opens at login.</p>
+
+<h2><a name="problems"></a>If something goes wrong</h2>
+<p>Press ⌃⌥⌘U, or quit Unplug: quitting reconnects every display. Logging out or restarting always brings every display back. Unplug won't turn off your last working display. If you unplugged a display while it was off, choose Forget next to it in the menu.</p>
+
+<h2><a name="command-line"></a>Command line</h2>
+<p>The <code>unplug</code> command is inside the app. To use it in Terminal, link it once:</p>
+<p><code>sudo ln -sf /Applications/Unplug.app/Contents/Helpers/unplug /usr/local/bin/unplug</code></p>
+<p>Then run <code>unplug help</code> to see every command.</p>
+
+<p style="margin-top: 24px"><a href="https://github.com/mihaiflorinpopa/unplug">Unplug on GitHub</a></p>
+</body>
+</html>

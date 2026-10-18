@@ -8,11 +8,11 @@
 
 Unplug makes macOS forget a display, as if you unplugged it, and brings it back with one click. The cable stays in, so the monitor can keep charging your laptop and powering its USB hub while its screen is off.
 
-It's free, open source (MIT) and runs on macOS 13 or later.
+It's free, open source (MIT) and runs on macOS 14 or later.
 
 <p align="center">
   <img src="Resources/screenshots/menu.png" alt="Unplug's menu in the menu bar" width="272" align="top">
-  <img src="Resources/screenshots/window.png" alt="Unplug's Settings window" width="300" align="top">
+  <img src="Resources/screenshots/window.png" alt="Unplug's Settings window, Displays pane" width="320" align="top">
 </p>
 
 ## Install
@@ -31,10 +31,13 @@ Click the display icon in the menu bar:
 - **Brightness:** set each display's brightness, from the menu or with a slider in Settings. Works for the built-in screen, Apple displays, and most other monitors (through DDC on Apple Silicon Macs).
 - **Keyboard Backlight:** on a MacBook, turn it on or off.
 - **Reconnect All Displays** brings everything back.
-- **Settings…** (⌘,) has every option, each with a short description: "Turn Off When a Monitor Connects" (the built-in screen always comes back when the last monitor is unplugged), the keyboard backlight going off with the screen, launch at login, keyboard shortcuts you can change, "Keep Displays Off After Restart", and "Show in Dock" if you'd rather use Unplug as a regular app with a window.
-- **About Unplug** and **Unplug Help** are at the bottom of the menu.
+- **Settings…** (⌘,) has every option, each with a short description:
+  - **Displays:** brightness sliders, "Turn Off When a Monitor Connects" (the built-in screen always comes back when the last monitor is unplugged), and the keyboard backlight going off with the screen.
+  - **General:** launch at login, "Keep Displays Off After Restart", updates, and "Show in Dock" if you'd rather use Unplug as a regular app with a window. Control-click its Dock icon to turn displays off or on.
+  - **Shortcuts:** change or turn off the keyboard shortcuts.
+- **Unplug Help** opens the help in macOS's help viewer, which you can also search from the Help menu.
 
-Keyboard shortcuts work anywhere. These are the defaults, and you can change them in Settings:
+Keyboard shortcuts work anywhere. These are the defaults, and you can change them in Settings > Shortcuts:
 
 | Shortcut | Does |
 | --- | --- |

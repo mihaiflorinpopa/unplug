@@ -1,10 +1,12 @@
 import Foundation
 
 /// Preferences shared by the menu bar app and the CLI. The app's own defaults
-/// domain is its bundle identifier, so the CLI reads the same suite.
+/// domain is its bundle identifier, so the CLI reads that suite. The app uses
+/// `.standard`, since Apple's docs say not to pass your own bundle identifier.
 public enum UnplugSettings {
     public static let domain = "io.github.mihaiflorinpopa.unplug"
-    static let defaults = UserDefaults(suiteName: domain) ?? .standard
+    static let defaults: UserDefaults =
+        Bundle.main.bundleIdentifier == domain ? .standard : UserDefaults(suiteName: domain) ?? .standard
 
     public static let keyboardBacklightKey = "keyboardBacklightFollowsBuiltin"
 

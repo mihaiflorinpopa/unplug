@@ -9,20 +9,17 @@ struct UnplugApp: App {
 
     var body: some Scene {
         MenuBarExtra("Unplug", systemImage: "display.2", isInserted: $showInMenuBar) {
-            MenuContent(model: delegate.model, showSettings: { delegate.window.show() },
-                        showAbout: { delegate.about.show() }, showHelp: { delegate.help.show() })
+            MenuContent(model: delegate.model, showAbout: { delegate.about.show() })
+        }
+        // Gives the app menu its Settings… item (⌘,). Help comes from the
+        // Help Book named in Info.plist.
+        Settings {
+            SettingsView(model: delegate.model, updater: delegate.updater)
         }
         .commands {
-            // The app menu and Help menu, seen when Unplug runs with a Dock icon.
+            // The app menu, seen when Unplug runs with a Dock icon.
             CommandGroup(replacing: .appInfo) {
                 Button("About Unplug") { delegate.about.show() }
-            }
-            CommandGroup(replacing: .appSettings) {
-                Button("Settings…") { delegate.window.show() }
-                    .keyboardShortcut(",")
-            }
-            CommandGroup(replacing: .help) {
-                Button("Unplug Help") { delegate.help.show() }
             }
         }
     }
@@ -32,10 +29,8 @@ struct UnplugApp: App {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let model = DisplaysModel()
     let updater = Updater()
-    /// The window with every option, opened with Settings… or from the Dock.
-    private(set) lazy var window = MainWindow(model: model, updater: updater)
+    private lazy var window = MainWindow(model: model)
     let about = SimpleWindow(title: "About Unplug") { AboutView() }
-    let help = SimpleWindow(title: "Unplug Help") { HelpView() }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         model.onShowInDockChange = { [weak self] in self?.setShowsInDock($0) }
@@ -53,6 +48,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         window.show()
         return true
+    }
+
+    /// Control-clicking the Dock icon turns displays off or on. Built each
+    /// time, so it shows the current state.
+    func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
+        model.refresh()
+        let menu = NSMenu()
+        for display in model.displays {
+            let item = NSMenuItem(title: display.name, action: #selector(toggleDisplay(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = display.uuid
+            item.state = display.isConnected ? .on : .off
+            menu.addItem(item)
+        }
+        if model.displays.contains(where: { !$0.isConnected }) {
+            menu.addItem(.separator())
+            let item = NSMenuItem(title: "Reconnect All Displays", action: #selector(reconnectAll), keyEquivalent: "")
+            item.target = self
+            menu.addItem(item)
+        }
+        return menu
+    }
+
+    @objc private func toggleDisplay(_ item: NSMenuItem) {
+        guard let display = model.displays.first(where: { $0.uuid == item.representedObject as? String }) else { return }
+        model.setConnected(display, !display.isConnected)
+    }
+
+    @objc private func reconnectAll() {
+        model.connectAll()
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
