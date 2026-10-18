@@ -31,4 +31,12 @@ final class DisplayMatchTests: XCTestCase {
             XCTAssertEqual(error as? UnplugError, .notFound("Dell"))
         }
     }
+
+    /// WindowServer's stand-in display, as logged after the last monitor was
+    /// unplugged (v: 0x756e6b6e m: 0x76697274), and an ASUS PG27UCDM.
+    func testRecognisesTheWindowServerPlaceholder() {
+        func fourCC(_ text: String) -> UInt32 { text.utf8.reduce(0) { $0 << 8 | UInt32($1) } }
+        XCTAssertTrue(DisplayManager.isPlaceholder(vendor: fourCC("unkn"), model: fourCC("virt")))
+        XCTAssertFalse(DisplayManager.isPlaceholder(vendor: 0x06B3, model: 0x27F5))
+    }
 }
