@@ -29,6 +29,11 @@ for size in 16 32 128 256 512; do
 done
 iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/AppIcon.icns"
 rm -rf "$ICONSET"
+
+# Help Book for the Help menu. Its search uses the Spotlight index hiutil builds.
+cp -R Resources/Unplug.help "$APP/Contents/Resources/"
+HELP="$APP/Contents/Resources/Unplug.help/Contents/Resources/en.lproj"
+hiutil -I corespotlight -Caf "$HELP/search.cshelpindex" "$HELP"
 cp "$BIN/UnplugApp" "$APP/Contents/MacOS/Unplug"
 # Helpers/, not MacOS/: "unplug" and "Unplug" collide on case-insensitive volumes.
 cp "$BIN/unplug" "$APP/Contents/Helpers/unplug"

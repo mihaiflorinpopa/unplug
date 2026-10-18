@@ -45,7 +45,7 @@ cat > build/appcast.xml <<XML
       <link>https://github.com/mihaiflorinpopa/unplug/releases/tag/v$VERSION</link>
       <sparkle:version>$BUILD</sparkle:version>
       <sparkle:shortVersionString>$VERSION</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
 $NOTES
       <enclosure url="$URL" $ATTRIBUTES type="application/octet-stream"/>
     </item>

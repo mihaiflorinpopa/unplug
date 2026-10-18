@@ -18,7 +18,8 @@ struct OptionToggle: View {
     }
 }
 
-/// Each option's title and description, shared by the window and Help.
+/// Each option's title and description, shared by the menu and Settings. The
+/// Help Book (Resources/Unplug.help) describes them in its own words.
 struct Option {
     let title: String
     let detail: String
@@ -53,10 +54,4 @@ struct Option {
     static let automaticUpdates = Option(
         title: "Check for Updates Automatically",
         detail: "Checks for a new version once a day and asks before installing it.")
-
-    /// Every option, in the order the window shows them.
-    static let all = [
-        builtinOffWithExternal, keyboardBacklight, keyboardBacklightFollowsBuiltin, reconnectOnQuit, shortcuts,
-        launchAtLogin, keepOffAfterRestart, showInMenuBar, showInDock, automaticUpdates,
-    ]
 }

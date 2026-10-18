@@ -2,33 +2,31 @@ import AppKit
 import SwiftUI
 import UnplugCore
 
-/// The window for people who prefer a regular app to a menu bar app. It shows
-/// the same controls as the menu. Kept alive when closed so reopening is instant.
+/// The window for people who prefer a regular app to a menu bar app ("Show in
+/// Dock"): the displays and their brightness. Options are in Settings. Kept
+/// alive when closed so reopening is instant.
 @MainActor
 final class MainWindow: NSObject, NSWindowDelegate {
     private let model: DisplaysModel
-    private let updater: Updater
     private var window: NSWindow?
 
-    init(model: DisplaysModel, updater: Updater) {
+    init(model: DisplaysModel) {
         self.model = model
-        self.updater = updater
     }
 
     func show() {
         let window = self.window ?? makeWindow()
         self.window = window
         model.refresh()
-        NSApp.activate(ignoringOtherApps: true)
+        NSApp.activate()
         window.makeKeyAndOrderFront(nil)
     }
 
     private func makeWindow() -> NSWindow {
-        let window = NSWindow(contentViewController: NSHostingController(
-            rootView: MainWindowView(model: model, updater: updater)))
+        let window = NSWindow(contentViewController: NSHostingController(rootView: DisplaysForm(model: model)))
         window.title = "Unplug"
         window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
-        window.setContentSize(NSSize(width: 420, height: 560))
+        window.setContentSize(NSSize(width: 420, height: 480))
         window.isReleasedWhenClosed = false
         window.delegate = self
         window.center()
@@ -42,53 +40,43 @@ final class MainWindow: NSObject, NSWindowDelegate {
     }
 }
 
-struct MainWindowView: View {
+/// The displays, in the Dock window and in Settings > Displays.
+struct DisplaysForm: View {
     @ObservedObject var model: DisplaysModel
-    @ObservedObject var updater: Updater
 
     var body: some View {
         Form {
             DisplaySections(model: model)
-
             if model.displays.contains(where: { !$0.isConnected }) {
                 Section {
                     Button("Reconnect All Displays") { model.connectAll() }
                 }
             }
-
-            if let error = model.lastError {
-                Section {
-                    Text(error).foregroundStyle(.red)
-                }
-            }
-
-            Section("Options") {
-                OptionToggle(option: .reconnectOnQuit, isOn: $model.reconnectOnQuit)
-                ShortcutsSettings(model: model)
-                OptionToggle(option: .launchAtLogin, isOn: $model.launchAtLogin)
-                OptionToggle(option: .keepOffAfterRestart, isOn: $model.keepOffAfterRestart)
-                OptionToggle(option: .showInMenuBar, isOn: $model.showInMenuBar)
-                OptionToggle(option: .showInDock, isOn: $model.showInDock)
-            }
-
-            Section {
-                if updater.isAvailable {
-                    OptionToggle(option: .automaticUpdates, isOn: $updater.automaticallyChecks)
-                }
-                LabeledContent("Version \(UnplugVersion.current)") {
-                    if updater.isAvailable {
-                        Button("Check for Updates…") { updater.checkForUpdates() }
-                            .disabled(!updater.canCheck)
-                    }
-                }
-            }
+            ErrorSection(model: model)
         }
         .formStyle(.grouped)
-        .frame(minWidth: 380, minHeight: 420)
+        // Picks up changes made elsewhere (the CLI, the brightness keys).
+        .onAppear {
+            model.refresh()
+            model.refreshBrightness()
+        }
     }
 }
 
-/// The display controls in the window, built-in screen first.
+/// The last error, at the bottom of a form.
+struct ErrorSection: View {
+    @ObservedObject var model: DisplaysModel
+
+    var body: some View {
+        if let error = model.lastError {
+            Section {
+                Text(error).foregroundStyle(.red)
+            }
+        }
+    }
+}
+
+/// The display controls, built-in screen first.
 struct DisplaySections: View {
     @ObservedObject var model: DisplaysModel
 
