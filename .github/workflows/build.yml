@@ -11,7 +11,8 @@ jobs:
   build:
     # Branches in this repo build on push; pull requests only add a build for forks.
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
-    runs-on: macos-latest
+    # Pinned so releases don't change Xcode and SDK when GitHub moves macos-latest.
+    runs-on: macos-26
     env:
       HAS_SPARKLE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY != '' }}
     steps:
