@@ -11,11 +11,12 @@ jobs:
   build:
     # Branches in this repo build on push; pull requests only add a build for forks.
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
-    runs-on: macos-latest
+    # Pinned so releases don't change Xcode and SDK when GitHub moves macos-latest.
+    runs-on: macos-26
     env:
       HAS_SPARKLE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY != '' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0 # full history for the build number and existing tags
       - name: Run tests
@@ -52,7 +53,7 @@ jobs:
             && gh api markdown -F text=@build/release-notes.md -f mode=gfm -f context="$GITHUB_REPOSITORY" > build/release-notes.html \
             || rm -f build/release-notes.html
           ./scripts/make-appcast.sh
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: Unplug-dmg
           path: build/Unplug-*.dmg
