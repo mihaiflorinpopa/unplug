@@ -1,0 +1,12 @@
+# Weekly pull requests for newer Sparkle (SwiftPM) and GitHub Actions versions.
+# Merging one doesn't publish a release; the next VERSION bump ships it.
+version: 2
+updates:
+  - package-ecosystem: swift
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
