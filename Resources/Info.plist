@@ -20,6 +20,8 @@
     <string>Unplug</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
+    <key>CFBundleIconName</key>
+    <string>Unplug</string>
     <key>CFBundleHelpBookFolder</key>
     <string>Unplug.help</string>
     <key>CFBundleHelpBookName</key>

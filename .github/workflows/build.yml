@@ -34,6 +34,7 @@ jobs:
       - name: Check bundle resources
         run: |
           test -s build/Unplug.app/Contents/Resources/AppIcon.icns
+          test -s build/Unplug.app/Contents/Resources/Assets.car
           test -s build/Unplug.app/Contents/Resources/Unplug.help/Contents/Resources/en.lproj/search.cshelpindex
           test -s build/Unplug.app/Contents/Resources/Credits.rtf
           plutil -lint build/Unplug.app/Contents/Info.plist build/Unplug.app/Contents/Resources/PrivacyInfo.xcprivacy
