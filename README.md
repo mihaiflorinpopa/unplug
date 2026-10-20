@@ -11,7 +11,7 @@ Unplug makes macOS forget a display, as if you unplugged it, and brings it back 
 It's free, open source (MIT) and runs on macOS 14 or later.
 
 <p align="center">
-  <img src="Resources/screenshots/menu.png" alt="Unplug's menu in the menu bar" width="272" align="top">
+  <img src="Resources/screenshots/menu.png" alt="Unplug's menu in the menu bar" width="300" align="top">
   <img src="Resources/screenshots/window.png" alt="Unplug's Settings window, Displays pane" width="320" align="top">
 </p>
 
@@ -28,7 +28,7 @@ You only need step 3 once. After that, Unplug updates itself.
 Click the display icon in the menu bar:
 
 - **Turn a display off or on** by clicking its name.
-- **Brightness:** set each display's brightness, from the menu or with a slider in Settings. Works for the built-in screen, Apple displays, and most other monitors (through DDC on Apple Silicon Macs).
+- **Brightness:** drag the slider under each display, in the menu or in Settings. Works for the built-in screen, Apple displays, and most other monitors (through DDC on Apple Silicon Macs).
 - **Keyboard Backlight:** on a MacBook, turn it on or off.
 - **Reconnect All Displays** brings everything back.
 - **Settings…** (⌘,) has every option, each with a short description:
@@ -49,7 +49,7 @@ Keyboard shortcuts work anywhere. These are the defaults, and you can change the
 - Press **⌃⌥⌘U**, or quit Unplug. Quitting reconnects every display.
 - Logging out or restarting always brings every display back, unless you turned on "Keep Displays Off After Restart".
 - Unplug won't turn off your last working display.
-- If you unplug a display while it's turned off in Unplug, choose **Forget** next to it in the menu.
+- If you unplug a display while it's turned off in Unplug, choose **Forget** under it in the menu.
 
 ## Command line
 

@@ -5,14 +5,12 @@ import UnplugCore
 @main
 struct UnplugApp: App {
     @NSApplicationDelegateAdaptor private var delegate: AppDelegate
-    @AppStorage(DisplaysModel.showInMenuBarKey) private var showInMenuBar = true
 
     var body: some Scene {
-        MenuBarExtra("Unplug", systemImage: "display.2", isInserted: $showInMenuBar) {
-            MenuContent(model: delegate.model, updater: delegate.updater)
-        }
-        // Gives the app menu its Settings… item (⌘,). Help comes from the
-        // Help Book named in Info.plist, and About from the standard panel.
+        // The menu bar menu is AppKit (StatusMenu), so it can hold sliders.
+        // This scene gives the app menu its Settings… item (⌘,), which the menu
+        // bar menu also uses. Help comes from the Help Book named in Info.plist,
+        // and About from the standard panel.
         Settings {
             SettingsView(model: delegate.model, updater: delegate.updater)
         }
@@ -24,8 +22,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let model = DisplaysModel()
     let updater = Updater()
     private lazy var window = MainWindow(model: model)
+    private lazy var statusMenu = StatusMenu(model: model, updater: updater)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        statusMenu.isVisible = model.showInMenuBar
+        model.onShowInMenuBarChange = { [weak self] in self?.statusMenu.isVisible = $0 }
         model.onShowInDockChange = { [weak self] in self?.setShowsInDock($0) }
         if model.showInDock || !model.showInMenuBar { setShowsInDock(true) }
     }

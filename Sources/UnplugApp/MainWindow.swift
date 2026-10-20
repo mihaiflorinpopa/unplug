@@ -110,33 +110,46 @@ struct DisplaySections: View {
         }
     }
 
-    /// Laid out like macOS's own Displays settings: a Brightness label, then the
-    /// slider with a small sun at the low end and a large sun at the high end,
-    /// as the HIG suggests for sliders. Hidden for displays without brightness control.
+    /// Laid out like macOS's own Displays settings: a Brightness label, then the slider.
     @ViewBuilder
     private func brightnessSlider(_ display: Display) -> some View {
-        if display.isConnected, let level = model.brightness[display.uuid] {
+        if display.isConnected, model.brightness[display.uuid] != nil {
             LabeledContent("Brightness") {
-                HStack {
-                    Slider(
-                        value: Binding(
-                            get: { model.brightness[display.uuid] ?? level },
-                            set: { model.setBrightness(display, $0) }),
-                        in: 0...1
-                    ) {
-                        // Hidden on screen, read by VoiceOver.
-                        Text("\(display.name) brightness")
-                    } minimumValueLabel: {
-                        Image(systemName: "sun.min")
-                    } maximumValueLabel: {
-                        Image(systemName: "sun.max")
-                    }
-                    .labelsHidden()
-                    .frame(minWidth: 220)
-                    Text("\(Int((level * 100).rounded()))%")
-                        .monospacedDigit()
-                        .frame(width: 40, alignment: .trailing)
+                BrightnessSlider(model: model, display: display)
+                    .frame(minWidth: 300)
+            }
+        }
+    }
+}
+
+/// A display's brightness: the slider with a small sun at the low end and a
+/// large sun at the high end, as the HIG suggests for sliders, then the level in
+/// percent. Used in Settings and the Dock window. Shows nothing for a
+/// display without brightness control.
+struct BrightnessSlider: View {
+    var model: DisplaysModel
+    let display: Display
+
+    var body: some View {
+        if let level = model.brightness[display.uuid] {
+            HStack {
+                Slider(
+                    value: Binding(
+                        get: { model.brightness[display.uuid] ?? level },
+                        set: { model.setBrightness(display, $0) }),
+                    in: 0...1
+                ) {
+                    // Hidden on screen, read by VoiceOver.
+                    Text("\(display.name) brightness")
+                } minimumValueLabel: {
+                    Image(systemName: "sun.min")
+                } maximumValueLabel: {
+                    Image(systemName: "sun.max")
                 }
+                .labelsHidden()
+                Text("\(Int((level * 100).rounded()))%")
+                    .monospacedDigit()
+                    .frame(width: 40, alignment: .trailing)
             }
         }
     }
