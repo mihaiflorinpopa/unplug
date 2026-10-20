@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import Sparkle
 
@@ -5,12 +6,14 @@ import Sparkle
 /// GitHub release. Updates are verified with Unplug's own EdDSA key rather than
 /// Apple notarization. Builds without a public key (SUPublicEDKey) leave it off.
 @MainActor
-final class Updater: NSObject, ObservableObject {
-    private var controller: SPUStandardUpdaterController?
-    @Published private(set) var canCheck = false
+@Observable
+final class Updater: NSObject {
+    @ObservationIgnored private var controller: SPUStandardUpdaterController?
+    @ObservationIgnored private var canCheckObservation: AnyCancellable?
+    private(set) var canCheck = false
     /// A scheduled check found an update the user hasn't looked at yet, so the
     /// menu shows "Update Available…" (Sparkle's gentle reminders).
-    @Published private(set) var updateAvailable = false
+    private(set) var updateAvailable = false
 
     var isAvailable: Bool { controller != nil }
 
@@ -19,8 +22,9 @@ final class Updater: NSObject, ObservableObject {
         let key = Bundle.main.object(forInfoDictionaryKey: "SUPublicEDKey") as? String ?? ""
         controller = key.isEmpty ? nil : SPUStandardUpdaterController(
             startingUpdater: true, updaterDelegate: nil, userDriverDelegate: self)
-        // As in Sparkle's SwiftUI example.
-        controller?.updater.publisher(for: \.canCheckForUpdates).assign(to: &$canCheck)
+        // Sparkle's SwiftUI example uses assign(to: &$canCheck), which needs @Published.
+        canCheckObservation = controller?.updater.publisher(for: \.canCheckForUpdates)
+            .sink { [weak self] in self?.canCheck = $0 }
         // Sparkle's own schedule checks once a day, so also check at launch (that is,
         // at login). Sparkle allows this right after starting, before the next run loop.
         if controller?.updater.automaticallyChecksForUpdates == true {
@@ -33,11 +37,11 @@ final class Updater: NSObject, ObservableObject {
     }
 
     var automaticallyChecks: Bool {
-        get { controller?.updater.automaticallyChecksForUpdates ?? false }
-        set {
-            controller?.updater.automaticallyChecksForUpdates = newValue
-            objectWillChange.send()
+        get {
+            access(keyPath: \.automaticallyChecks)
+            return controller?.updater.automaticallyChecksForUpdates ?? false
         }
+        set { withMutation(keyPath: \.automaticallyChecks) { controller?.updater.automaticallyChecksForUpdates = newValue } }
     }
 }
 

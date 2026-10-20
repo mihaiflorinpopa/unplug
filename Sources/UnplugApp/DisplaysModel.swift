@@ -6,42 +6,49 @@ import SwiftUI
 import UnplugCore
 
 @MainActor
-final class DisplaysModel: ObservableObject {
+@Observable
+final class DisplaysModel {
     static let reconnectOnQuitKey = "reconnectOnQuit"
     static let shortcutsKey = "globalShortcuts"
     static let showInMenuBarKey = "showInMenuBar"
     static let showInDockKey = "showInDock"
 
-    @Published private(set) var displays: [Display] = []
-    @Published var lastError: String?
+    private(set) var displays: [Display] = []
+    var lastError: String?
     /// Disconnected displays whose reconnect failed, usually because they were
     /// unplugged. The menu offers to forget them.
-    @Published private(set) var unreachable: Set<String> = []
+    private(set) var unreachable: Set<String> = []
     /// Brightness (0–1) by display UUID, for displays that support it. Read when
     /// the menu or window opens; monitors are never polled.
-    @Published private(set) var brightness: [String: Double] = [:]
-    @AppStorage(reconnectOnQuitKey) var reconnectOnQuit = true
+    private(set) var brightness: [String: Double] = [:]
+    var reconnectOnQuit: Bool {
+        get {
+            access(keyPath: \.reconnectOnQuit)
+            return UserDefaults.standard.object(forKey: Self.reconnectOnQuitKey) as? Bool ?? true
+        }
+        set { withMutation(keyPath: \.reconnectOnQuit) { UserDefaults.standard.set(newValue, forKey: Self.reconnectOnQuitKey) } }
+    }
 
     private let manager = DisplayManager()
-    private var monitor: DisplayMonitor?
+    @ObservationIgnored private var monitor: DisplayMonitor?
     private let hotKeys = HotKeys()
-    private var menuObserver: NSObjectProtocol?
+    @ObservationIgnored private var menuObserver: NSObjectProtocol?
     private let brightnessControl = Brightness()
     /// DDC can take a moment per call, so brightness I/O runs on its own queue.
     private let brightnessQueue = DispatchQueue(label: "\(UnplugSettings.domain).brightness")
-    private var pendingBrightness: [String: (Display, Double)] = [:]
+    @ObservationIgnored private var pendingBrightness: [String: (Display, Double)] = [:]
 
     /// Called when "Show in Dock" changes, so the app delegate can switch between
     /// a menu bar–only app and a regular app with a Dock icon and a window.
-    var onShowInDockChange: ((Bool) -> Void)?
+    @ObservationIgnored var onShowInDockChange: ((Bool) -> Void)?
 
     /// Displays still to turn off again after a restart. Some monitors come
     /// online a moment after login, so this is retried on each display change.
-    private var pendingTurnOff: Set<String> = []
+    @ObservationIgnored private var pendingTurnOff: Set<String> = []
     /// Decides when the built-in screen turns off or back on with monitors.
-    private var follower = BuiltinFollower([])
-    private var builtinRestoreRetry: Task<Void, Never>?
-    private var wakeObservers: [NSObjectProtocol] = []
+    @ObservationIgnored private var follower = BuiltinFollower([])
+    @ObservationIgnored private var builtinRestoreRetry: Task<Void, Never>?
+    @ObservationIgnored private var wakeObservers: [NSObjectProtocol] = []
     private let log = DisplayManager.log
     private var builtin: Display? { displays.first(where: \.isBuiltin) }
 
@@ -68,7 +75,9 @@ final class DisplaysModel: ObservableObject {
             Task { @MainActor in
                 self?.refresh()
                 self?.refreshBrightness()
-                self?.objectWillChange.send()
+                // The keyboard keys or System Settings may have changed these.
+                self?.withMutation(keyPath: \.keyboardLightOn) {}
+                self?.withMutation(keyPath: \.launchAtLogin) {}
             }
         }
         // A Mac left with no screen can go to display sleep, or sleep entirely
@@ -234,41 +243,53 @@ final class DisplaysModel: ObservableObject {
 
     let keyboardBacklightAvailable = KeyboardBacklight.isAvailable
 
+    // Settings stored outside this class (UserDefaults, CoreBrightness,
+    // SMAppService) report their reads and writes to Observation themselves,
+    // with access(keyPath:) and withMutation(keyPath:), as SE-0395 describes for
+    // computed properties backed by other storage.
     var keyboardLightOn: Bool {
-        get { !KeyboardBacklight.isOff }
-        set {
-            KeyboardBacklight.setOn(newValue)
-            objectWillChange.send()
+        get {
+            access(keyPath: \.keyboardLightOn)
+            return !KeyboardBacklight.isOff
         }
+        set { withMutation(keyPath: \.keyboardLightOn) { KeyboardBacklight.setOn(newValue) } }
     }
 
     var keyboardBacklightFollowsBuiltin: Bool {
-        get { UnplugSettings.keyboardBacklightFollowsBuiltin }
-        set {
-            UnplugSettings.keyboardBacklightFollowsBuiltin = newValue
-            objectWillChange.send()
+        get {
+            access(keyPath: \.keyboardBacklightFollowsBuiltin)
+            return UnplugSettings.keyboardBacklightFollowsBuiltin
         }
+        set { withMutation(keyPath: \.keyboardBacklightFollowsBuiltin) { UnplugSettings.keyboardBacklightFollowsBuiltin = newValue } }
     }
 
     /// System-wide shortcuts: one reconnects every display, one turns the
     /// built-in screen off or on. ⌃⌥⌘U and ⌃⌥⌘B unless changed.
     var shortcutsEnabled: Bool {
-        get { UserDefaults.standard.object(forKey: Self.shortcutsKey) as? Bool ?? true }
+        get {
+            access(keyPath: \.shortcutsEnabled)
+            return UserDefaults.standard.object(forKey: Self.shortcutsKey) as? Bool ?? true
+        }
         set {
-            UserDefaults.standard.set(newValue, forKey: Self.shortcutsKey)
+            withMutation(keyPath: \.shortcutsEnabled) { UserDefaults.standard.set(newValue, forKey: Self.shortcutsKey) }
             applyShortcuts()
-            objectWillChange.send()
         }
     }
 
     var reconnectAllShortcut: Shortcut {
-        get { Self.loadShortcut("shortcut.reconnectAll") ?? .reconnectAll }
-        set { saveShortcut(newValue, "shortcut.reconnectAll") }
+        get {
+            access(keyPath: \.reconnectAllShortcut)
+            return Self.loadShortcut("shortcut.reconnectAll") ?? .reconnectAll
+        }
+        set { withMutation(keyPath: \.reconnectAllShortcut) { saveShortcut(newValue, "shortcut.reconnectAll") } }
     }
 
     var toggleBuiltinShortcut: Shortcut {
-        get { Self.loadShortcut("shortcut.toggleBuiltin") ?? .toggleBuiltin }
-        set { saveShortcut(newValue, "shortcut.toggleBuiltin") }
+        get {
+            access(keyPath: \.toggleBuiltinShortcut)
+            return Self.loadShortcut("shortcut.toggleBuiltin") ?? .toggleBuiltin
+        }
+        set { withMutation(keyPath: \.toggleBuiltinShortcut) { saveShortcut(newValue, "shortcut.toggleBuiltin") } }
     }
 
     /// Lets the shortcut recorder see keys that are currently shortcuts.
@@ -283,7 +304,6 @@ final class DisplaysModel: ObservableObject {
     private func saveShortcut(_ shortcut: Shortcut, _ key: String) {
         UserDefaults.standard.set(try? JSONEncoder().encode(shortcut), forKey: key)
         applyShortcuts()
-        objectWillChange.send()
     }
 
     private func applyShortcuts() {
@@ -299,67 +319,77 @@ final class DisplaysModel: ObservableObject {
             Task { @MainActor in self?.toggleBuiltin() }
         }) { taken.append(builtin.description) }
         if !taken.isEmpty {
-            lastError = "\(taken.joined(separator: " and ")) already belongs to another app. Choose another shortcut in Options."
+            lastError = "\(taken.joined(separator: " and ")) already belongs to another app. Choose another shortcut in Settings > Shortcuts."
         }
     }
 
     var showInMenuBar: Bool {
-        get { UserDefaults.standard.object(forKey: Self.showInMenuBarKey) as? Bool ?? true }
+        get {
+            access(keyPath: \.showInMenuBar)
+            return UserDefaults.standard.object(forKey: Self.showInMenuBarKey) as? Bool ?? true
+        }
         set {
-            UserDefaults.standard.set(newValue, forKey: Self.showInMenuBarKey)
+            withMutation(keyPath: \.showInMenuBar) { UserDefaults.standard.set(newValue, forKey: Self.showInMenuBarKey) }
             // Keep at least one way to reach the app.
             if !newValue && !showInDock { showInDock = true }
-            objectWillChange.send()
         }
     }
 
     var showInDock: Bool {
-        get { UserDefaults.standard.bool(forKey: Self.showInDockKey) }
+        get {
+            access(keyPath: \.showInDock)
+            return UserDefaults.standard.bool(forKey: Self.showInDockKey)
+        }
         set {
-            UserDefaults.standard.set(newValue, forKey: Self.showInDockKey)
+            withMutation(keyPath: \.showInDock) { UserDefaults.standard.set(newValue, forKey: Self.showInDockKey) }
             if !newValue && !showInMenuBar { showInMenuBar = true }
             onShowInDockChange?(newValue)
-            objectWillChange.send()
         }
     }
 
     var builtinOffWithExternal: Bool {
-        get { UnplugSettings.builtinOffWithExternal }
-        set {
-            UnplugSettings.builtinOffWithExternal = newValue
-            objectWillChange.send()
+        get {
+            access(keyPath: \.builtinOffWithExternal)
+            return UnplugSettings.builtinOffWithExternal
         }
+        set { withMutation(keyPath: \.builtinOffWithExternal) { UnplugSettings.builtinOffWithExternal = newValue } }
     }
 
     /// Turns displays the user left off back off when Unplug starts. Needs
     /// Unplug to open at login, so turning it on also turns that on.
     var keepOffAfterRestart: Bool {
-        get { UnplugSettings.keepOffAfterRestart }
+        get {
+            access(keyPath: \.keepOffAfterRestart)
+            return UnplugSettings.keepOffAfterRestart
+        }
         set {
-            UnplugSettings.keepOffAfterRestart = newValue
+            withMutation(keyPath: \.keepOffAfterRestart) { UnplugSettings.keepOffAfterRestart = newValue }
             if newValue && !launchAtLogin { launchAtLogin = true }
-            objectWillChange.send()
         }
     }
 
     var launchAtLogin: Bool {
-        get { SMAppService.mainApp.status == .enabled }
+        get {
+            access(keyPath: \.launchAtLogin)
+            return SMAppService.mainApp.status == .enabled
+        }
         set {
-            do {
-                if newValue {
-                    try SMAppService.mainApp.register()
-                } else {
-                    try SMAppService.mainApp.unregister()
+            withMutation(keyPath: \.launchAtLogin) {
+                do {
+                    if newValue {
+                        try SMAppService.mainApp.register()
+                    } else {
+                        try SMAppService.mainApp.unregister()
+                    }
+                } catch {
+                    lastError = error.localizedDescription
                 }
-            } catch {
-                lastError = error.localizedDescription
             }
             // macOS can hold a new login item until the user allows it.
             if newValue && SMAppService.mainApp.status == .requiresApproval {
                 lastError = "Allow Unplug under Login Items in System Settings so it can open at login."
                 SMAppService.openSystemSettingsLoginItems()
             }
-            objectWillChange.send()
         }
     }
 }

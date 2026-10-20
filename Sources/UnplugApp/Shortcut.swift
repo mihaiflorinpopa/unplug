@@ -122,7 +122,7 @@ struct ShortcutRecorder: View {
 
 /// The keyboard shortcut settings in the window.
 struct ShortcutsSettings: View {
-    @ObservedObject var model: DisplaysModel
+    @Bindable var model: DisplaysModel
 
     var body: some View {
         OptionToggle(option: .shortcuts, isOn: $model.shortcutsEnabled)
