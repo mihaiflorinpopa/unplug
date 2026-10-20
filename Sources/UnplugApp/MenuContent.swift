@@ -4,8 +4,8 @@ import UnplugCore
 
 /// The menu bar menu: only what's used often. Every option is in Settings.
 struct MenuContent: View {
-    @ObservedObject var model: DisplaysModel
-    @ObservedObject var updater: Updater
+    @Bindable var model: DisplaysModel
+    var updater: Updater
     let showAbout: () -> Void
     @Environment(\.openSettings) private var openSettings
 

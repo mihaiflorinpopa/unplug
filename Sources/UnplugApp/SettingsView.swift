@@ -4,8 +4,8 @@ import UnplugCore
 /// The Settings window (⌘,), a SwiftUI `Settings` scene with one pane per
 /// group. It opens on the pane used last, as Apple's guidelines suggest.
 struct SettingsView: View {
-    @ObservedObject var model: DisplaysModel
-    @ObservedObject var updater: Updater
+    var model: DisplaysModel
+    var updater: Updater
     @AppStorage("settingsPane") private var pane = Pane.displays
 
     enum Pane: String {
@@ -40,8 +40,8 @@ struct SettingsView: View {
 }
 
 struct GeneralSettings: View {
-    @ObservedObject var model: DisplaysModel
-    @ObservedObject var updater: Updater
+    @Bindable var model: DisplaysModel
+    @Bindable var updater: Updater
 
     var body: some View {
         Form {

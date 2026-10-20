@@ -42,7 +42,7 @@ final class MainWindow: NSObject, NSWindowDelegate {
 
 /// The displays, in the Dock window and in Settings > Displays.
 struct DisplaysForm: View {
-    @ObservedObject var model: DisplaysModel
+    var model: DisplaysModel
 
     var body: some View {
         Form {
@@ -65,7 +65,7 @@ struct DisplaysForm: View {
 
 /// The last error, at the bottom of a form.
 struct ErrorSection: View {
-    @ObservedObject var model: DisplaysModel
+    var model: DisplaysModel
 
     var body: some View {
         if let error = model.lastError {
@@ -78,7 +78,7 @@ struct ErrorSection: View {
 
 /// The display controls, built-in screen first.
 struct DisplaySections: View {
-    @ObservedObject var model: DisplaysModel
+    @Bindable var model: DisplaysModel
 
     private var builtin: [Display] { model.displays.filter(\.isBuiltin) }
     private var external: [Display] { model.displays.filter { !$0.isBuiltin } }
