@@ -77,6 +77,11 @@ private func symbol<T>(_ library: String, _ name: String, as _: T.Type) -> T? {
     return unsafeBitCast(pointer, to: T.self)
 }
 
+/// The text in a null-terminated buffer an IOKit call filled in.
+private func string(fromCBuffer buffer: [CChar]) -> String {
+    String(decoding: buffer.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self)
+}
+
 /// The DisplayServices private framework.
 private enum DisplayServices {
     private typealias CanChange = @convention(c) (CGDirectDisplayID) -> Bool
@@ -145,11 +150,11 @@ private enum DDC {
         while entry != 0 {
             var name = [CChar](repeating: 0, count: 128)
             IORegistryEntryGetName(entry, &name)
-            let entryName = String(cString: name)
+            let entryName = string(fromCBuffer: name)
             if entryName == "AppleCLCD2" || entryName == "IOMobileFramebufferShim" {
                 var path = [CChar](repeating: 0, count: 1024)
                 if IORegistryEntryGetPath(entry, kIOServicePlane, &path) == KERN_SUCCESS {
-                    framebufferPath = String(cString: path)
+                    framebufferPath = string(fromCBuffer: path)
                 }
             } else if entryName == "DCPAVServiceProxy", let path = framebufferPath {
                 let location = IORegistryEntryCreateCFProperty(

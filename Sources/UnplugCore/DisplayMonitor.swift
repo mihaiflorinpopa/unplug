@@ -3,8 +3,9 @@ import Foundation
 
 /// Calls `onChange` after macOS finishes reconfiguring displays (connect,
 /// disconnect, enable, disable, mode change), using Apple's documented
-/// reconfiguration callback rather than polling.
-public final class DisplayMonitor {
+/// reconfiguration callback rather than polling. Sendable because its callbacks
+/// and `onChange` only run on the main thread.
+public final class DisplayMonitor: @unchecked Sendable {
     private let onChange: () -> Void
     /// Set while a call to `onChange` is queued, so the calls macOS makes for
     /// each display in one change lead to one refresh, not one per display.

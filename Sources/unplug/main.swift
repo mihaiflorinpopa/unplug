@@ -49,10 +49,13 @@ guard let command = positional.first else {
     exit(flags.contains("--help") ? 0 : 1)
 }
 
+// Top-level code runs on the main actor, and these read its globals.
+@MainActor
 func target() -> Display {
     target(positional.dropFirst())
 }
 
+@MainActor
 func target(_ words: ArraySlice<String>) -> Display {
     guard !words.isEmpty else { fail("\(command) needs a display. Run `unplug list`.") }
     do {

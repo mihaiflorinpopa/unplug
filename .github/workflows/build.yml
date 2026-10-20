@@ -23,10 +23,11 @@ jobs:
         run: swift test
       - name: Build app and disk image
         run: ./scripts/build-dmg.sh
-      - name: Check app icon and Help Book
+      - name: Check app icon, Help Book and privacy manifest
         run: |
           test -s build/Unplug.app/Contents/Resources/AppIcon.icns
           test -s build/Unplug.app/Contents/Resources/Unplug.help/Contents/Resources/en.lproj/search.cshelpindex
+          plutil -lint build/Unplug.app/Contents/Resources/PrivacyInfo.xcprivacy
       - name: Smoke-test CLI
         run: |
           ./build/Unplug.app/Contents/Helpers/unplug help

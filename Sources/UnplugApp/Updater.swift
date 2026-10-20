@@ -5,21 +5,22 @@ import Sparkle
 /// GitHub release. Updates are verified with Unplug's own EdDSA key rather than
 /// Apple notarization. Builds without a public key (SUPublicEDKey) leave it off.
 @MainActor
-final class Updater: ObservableObject {
-    private let controller: SPUStandardUpdaterController?
-    private var observation: NSKeyValueObservation?
+final class Updater: NSObject, ObservableObject {
+    private var controller: SPUStandardUpdaterController?
     @Published private(set) var canCheck = false
+    /// A scheduled check found an update the user hasn't looked at yet, so the
+    /// menu shows "Update Available…" (Sparkle's gentle reminders).
+    @Published private(set) var updateAvailable = false
 
     var isAvailable: Bool { controller != nil }
 
-    init() {
+    override init() {
+        super.init()
         let key = Bundle.main.object(forInfoDictionaryKey: "SUPublicEDKey") as? String ?? ""
         controller = key.isEmpty ? nil : SPUStandardUpdaterController(
-            startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
-        observation = controller?.updater.observe(\.canCheckForUpdates, options: [.initial, .new]) { [weak self] updater, _ in
-            let canCheck = updater.canCheckForUpdates
-            Task { @MainActor in self?.canCheck = canCheck }
-        }
+            startingUpdater: true, updaterDelegate: nil, userDriverDelegate: self)
+        // As in Sparkle's SwiftUI example.
+        controller?.updater.publisher(for: \.canCheckForUpdates).assign(to: &$canCheck)
     }
 
     func checkForUpdates() {
@@ -32,5 +33,26 @@ final class Updater: ObservableObject {
             controller?.updater.automaticallyChecksForUpdates = newValue
             objectWillChange.send()
         }
+    }
+}
+
+/// A menu bar app has no Dock icon, so Sparkle won't bring a scheduled update
+/// alert to the front, and it can go unnoticed. Sparkle calls these on the main
+/// thread. https://sparkle-project.org/documentation/gentle-reminders
+extension Updater: @MainActor SPUStandardUserDriverDelegate {
+    var supportsGentleScheduledUpdateReminders: Bool { true }
+
+    func standardUserDriverWillHandleShowingUpdate(
+        _ handleShowingUpdate: Bool, forUpdate update: SUAppcastItem, state: SPUUserUpdateState
+    ) {
+        if !state.userInitiated { updateAvailable = true }
+    }
+
+    func standardUserDriverDidReceiveUserAttention(forUpdate update: SUAppcastItem) {
+        updateAvailable = false
+    }
+
+    func standardUserDriverWillFinishUpdateSession() {
+        updateAvailable = false
     }
 }

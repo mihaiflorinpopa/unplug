@@ -9,7 +9,7 @@ struct UnplugApp: App {
 
     var body: some Scene {
         MenuBarExtra("Unplug", systemImage: "display.2", isInserted: $showInMenuBar) {
-            MenuContent(model: delegate.model, showAbout: { delegate.about.show() })
+            MenuContent(model: delegate.model, updater: delegate.updater, showAbout: { delegate.about.show() })
         }
         // Gives the app menu its Settings… item (⌘,). Help comes from the
         // Help Book named in Info.plist.

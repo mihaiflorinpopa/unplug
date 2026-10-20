@@ -10,6 +10,8 @@ APP=build/Unplug.app
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Helpers" "$APP/Contents/Resources"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
+# Privacy manifest, where Apple expects it in a Mac app.
+cp Resources/PrivacyInfo.xcprivacy "$APP/Contents/Resources/"
 
 # Version: VERSION is the single source of truth; the build number is the
 # commit count, so every build from main is unique and increasing.

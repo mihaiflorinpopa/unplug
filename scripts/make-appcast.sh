@@ -52,4 +52,7 @@ $NOTES
   </channel>
 </rss>
 XML
-echo "Wrote build/appcast.xml for $VERSION ($BUILD)"
+# Sign the feed itself (SURequireSignedFeed): sign_update embeds the signature in the XML.
+"$SIGN_UPDATE" --ed-key-file "$TMP/key" build/appcast.xml
+"$SIGN_UPDATE" --verify --ed-key-file "$TMP/key" build/appcast.xml
+echo "Wrote and signed build/appcast.xml for $VERSION ($BUILD)"

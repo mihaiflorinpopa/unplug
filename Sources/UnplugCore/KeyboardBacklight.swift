@@ -22,7 +22,8 @@ public enum KeyboardBacklight {
     private typealias GetBool = @convention(c) (AnyObject, Selector, UInt64) -> Bool
     private typealias SetBool = @convention(c) (AnyObject, Selector, Bool, UInt64) -> Bool
 
-    private static let client: NSObject? = {
+    /// Only used from the main thread: the app's main actor or the CLI's top-level code.
+    nonisolated(unsafe) private static let client: NSObject? = {
         let path = "/System/Library/PrivateFrameworks/CoreBrightness.framework/CoreBrightness"
         guard dlopen(path, RTLD_LAZY) != nil,
               let type = NSClassFromString("KeyboardBrightnessClient") as? NSObject.Type
