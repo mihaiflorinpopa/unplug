@@ -29,10 +29,11 @@ Click the display icon in the menu bar:
 
 - **Turn a display off or on** by clicking its name.
 - **Brightness:** drag the slider under each display, in the menu or in Settings. Works for the built-in screen, Apple displays, and most other monitors (through DDC on Apple Silicon Macs).
+- **Linked brightness:** turn on Link Brightness for two or more displays in Settings > Displays, and one slider in the menu sets them all.
 - **Keyboard Backlight:** on a MacBook, turn it on or off.
 - **Reconnect All Displays** brings everything back.
 - **Settings…** (⌘,) has every option, each with a short description:
-  - **Displays:** brightness sliders, "Turn Off When a Monitor Connects" (the built-in screen always comes back when the last monitor is unplugged), and the keyboard backlight going off with the screen.
+  - **Displays:** brightness sliders, Link Brightness, "Turn Off When a Monitor Connects" (the built-in screen always comes back when the last monitor is unplugged), and the keyboard backlight going off with the screen.
   - **General:** launch at login, "Keep Displays Off After Restart", updates, and "Show in Dock" if you'd rather use Unplug as a regular app with a window. Control-click its Dock icon to turn displays off or on.
   - **Shortcuts:** change or turn off the keyboard shortcuts.
 - **Unplug Help** opens the help in macOS's help viewer, which you can also search from the Help menu.

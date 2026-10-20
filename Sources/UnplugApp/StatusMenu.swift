@@ -42,21 +42,29 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         menu.removeAllItems()
         sliders.removeAll()
 
-        menu.addItem(.sectionHeader(title: "Displays"))
-        for display in model.displays {
-            let item = add(display.name, #selector(toggleDisplay(_:)), represented: display.uuid)
-            item.state = display.isConnected ? .on : .off
+        // Linked displays get their own section, with one slider for all of them.
+        let linked = model.linkedDisplays
+        let single = model.displays.filter { display in !linked.contains { $0.uuid == display.uuid } }
+        if !single.isEmpty {
+            menu.addItem(.sectionHeader(title: "Displays"))
+        }
+        for display in single {
+            addDisplay(display)
             if display.isConnected, let level = model.brightness[display.uuid] {
-                let view = BrightnessMenuView(display: display, level: level) { [weak self] in
-                    self?.model.setBrightness($0, $1)
-                }
-                sliders[display.uuid] = view
-                let row = NSMenuItem()
-                row.view = view
-                menu.addItem(row)
+                addSlider(for: display, level: level, name: display.name)
             }
-            if model.unreachable.contains(display.uuid) {
-                add("Forget \(display.name)", #selector(forget(_:)), represented: display.uuid)
+            addForget(display)
+        }
+        if !linked.isEmpty {
+            // The HIG separates groups of menu items with a separator.
+            if !single.isEmpty { menu.addItem(.separator()) }
+            menu.addItem(.sectionHeader(title: "Linked Displays"))
+            for display in linked {
+                addDisplay(display)
+                addForget(display)
+            }
+            if let owner = sliderOwner(linked), let level = model.brightness[owner.uuid] {
+                addSlider(for: owner, level: level, name: "Linked Displays")
             }
         }
 
@@ -85,6 +93,32 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         add("Quit Unplug", #selector(quit), key: "q")
     }
 
+    private func addDisplay(_ display: Display) {
+        add(display.name, #selector(toggleDisplay(_:)), represented: display.uuid).state = display.isConnected ? .on : .off
+    }
+
+    private func addForget(_ display: Display) {
+        if model.unreachable.contains(display.uuid) {
+            add("Forget \(display.name)", #selector(forget(_:)), represented: display.uuid)
+        }
+    }
+
+    private func addSlider(for display: Display, level: Double, name: String) {
+        let view = BrightnessMenuView(name: name, level: level) { [weak self] in
+            self?.model.setBrightness(display, $0)
+        }
+        sliders[display.uuid] = view
+        let row = NSMenuItem()
+        row.view = view
+        menu.addItem(row)
+    }
+
+    /// The linked display whose level the group's slider shows and sets: the
+    /// first one that's on and has brightness control.
+    private func sliderOwner(_ linked: [Display]) -> Display? {
+        linked.first { $0.isConnected && model.brightness[$0.uuid] != nil }
+    }
+
     @discardableResult
     private func add(_ title: String, _ action: Selector, key: String = "", represented: Any? = nil) -> NSMenuItem {
         let item = menu.addItem(withTitle: title, action: action, keyEquivalent: key)
@@ -102,10 +136,12 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         } onChange: { [weak self] in
             Task { @MainActor in
                 guard let self else { return }
-                let supported = Set(self.model.displays.filter(\.isConnected).compactMap { display in
-                    self.model.brightness[display.uuid].map { _ in display.uuid }
-                })
-                if supported != Set(self.sliders.keys) {
+                let linked = self.model.linkedDisplays
+                var owners = Set(self.model.displays
+                    .filter { display in display.isConnected && self.model.brightness[display.uuid] != nil && !linked.contains { $0.uuid == display.uuid } }
+                    .map(\.uuid))
+                if let owner = self.sliderOwner(linked) { owners.insert(owner.uuid) }
+                if owners != Set(self.sliders.keys) {
                     self.rebuild()
                 } else {
                     for (uuid, view) in self.sliders {
@@ -174,15 +210,14 @@ final class StatusMenu: NSObject, NSMenuDelegate {
 /// A brightness row for the menu, like macOS's own Display menu: a small sun, the
 /// slider, a large sun, then the level in percent, as in Settings.
 final class BrightnessMenuView: NSView {
-    private let display: Display
-    private let onChange: (Display, Double) -> Void
+    private let onChange: (Double) -> Void
     private let slider = MenuSlider()
     private let percent = NSTextField(labelWithString: "")
     /// True while this slider is being dragged, so readings don't move it.
     private var dragging = false
 
-    init(display: Display, level: Double, onChange: @escaping (Display, Double) -> Void) {
-        self.display = display
+    /// `name` is what VoiceOver reads: the display's name, or Linked Displays.
+    init(name: String, level: Double, onChange: @escaping (Double) -> Void) {
         self.onChange = onChange
         super.init(frame: NSRect(x: 0, y: 0, width: 280, height: 28))
         autoresizingMask = [.width]
@@ -190,7 +225,7 @@ final class BrightnessMenuView: NSView {
         slider.target = self
         slider.action = #selector(changed)
         slider.isContinuous = true
-        slider.setAccessibilityLabel("\(display.name) brightness")
+        slider.setAccessibilityLabel("\(name) brightness")
         percent.font = .monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
         percent.textColor = .secondaryLabelColor
         percent.alignment = .right
@@ -236,7 +271,7 @@ final class BrightnessMenuView: NSView {
         // A continuous slider sends its last action on mouse up.
         dragging = NSApp.currentEvent?.type != .leftMouseUp
         percent.stringValue = "\(Int((slider.doubleValue * 100).rounded()))%"
-        onChange(display, slider.doubleValue)
+        onChange(slider.doubleValue)
     }
 }
 
