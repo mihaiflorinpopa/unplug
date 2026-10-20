@@ -32,7 +32,6 @@ final class DisplaysModel {
     private let manager = DisplayManager()
     @ObservationIgnored private var monitor: DisplayMonitor?
     private let hotKeys = HotKeys()
-    @ObservationIgnored private var menuObserver: NSObjectProtocol?
     private let brightnessControl = Brightness()
     /// DDC can take a moment per call, so brightness I/O runs on its own queue.
     private let brightnessQueue = DispatchQueue(label: "\(UnplugSettings.domain).brightness")
@@ -41,6 +40,8 @@ final class DisplaysModel {
     /// Called when "Show in Dock" changes, so the app delegate can switch between
     /// a menu bar–only app and a regular app with a Dock icon and a window.
     @ObservationIgnored var onShowInDockChange: ((Bool) -> Void)?
+    /// Called when "Show in Menu Bar" changes, to show or hide the menu bar item.
+    @ObservationIgnored var onShowInMenuBarChange: ((Bool) -> Void)?
 
     /// Displays still to turn off again after a restart. Some monitors come
     /// online a moment after login, so this is retried on each display change.
@@ -67,19 +68,6 @@ final class DisplaysModel {
                 self?.followExternalDisplays()
             }
         }
-        // Re-read state each time the menu opens, so changes made elsewhere
-        // (the CLI, the keyboard's brightness keys) show up.
-        menuObserver = NotificationCenter.default.addObserver(
-            forName: NSMenu.didBeginTrackingNotification, object: nil, queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in
-                self?.refresh()
-                self?.refreshBrightness()
-                // The keyboard keys or System Settings may have changed these.
-                self?.withMutation(keyPath: \.keyboardLightOn) {}
-                self?.withMutation(keyPath: \.launchAtLogin) {}
-            }
-        }
         // A Mac left with no screen can go to display sleep, or sleep entirely
         // with the lid closed, before the built-in screen comes back, so check
         // again when displays or the Mac wake.
@@ -98,6 +86,16 @@ final class DisplaysModel {
         displays = manager.displays()
         // A display that is back online no longer needs forgetting.
         unreachable.formIntersection(displays.filter { !$0.isConnected }.map(\.uuid))
+    }
+
+    /// The menu bar menu opened: re-read what may have changed elsewhere.
+    func menuOpened() {
+        log.debug("Menu bar menu opened")
+        refresh()
+        refreshBrightness()
+        // The keyboard's brightness keys or System Settings may have changed these.
+        withMutation(keyPath: \.keyboardLightOn) {}
+        withMutation(keyPath: \.launchAtLogin) {}
     }
 
     /// Reads every connected display's brightness in the background.
@@ -330,6 +328,7 @@ final class DisplaysModel {
         }
         set {
             withMutation(keyPath: \.showInMenuBar) { UserDefaults.standard.set(newValue, forKey: Self.showInMenuBarKey) }
+            onShowInMenuBarChange?(newValue)
             // Keep at least one way to reach the app.
             if !newValue && !showInDock { showInDock = true }
         }
