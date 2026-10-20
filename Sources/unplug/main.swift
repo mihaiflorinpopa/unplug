@@ -13,6 +13,7 @@ commands:
   forget <display>             Stop remembering a disconnected display that was
                                unplugged and can't be reconnected
   brightness <display> [0-100] Print a display's brightness, or set it in percent
+                               (displays linked in Settings follow)
   keyboard [on|off|toggle]     Turn the MacBook keyboard backlight on or off (no
                                argument prints its state)
 
@@ -132,7 +133,11 @@ case "brightness":
     let brightness = Brightness()
     if let level {
         guard brightness.set(d, Double(level) / 100) else { fail("\(d.name) doesn't support brightness control.") }
-        print("\(d.name) brightness \(level)%.")
+        // Displays linked in Settings > Displays move together, as in the menu.
+        let linked = manager.displays().linkedGroup(UnplugSettings.linkedBrightness)
+        let others = linked.contains { $0.uuid == d.uuid } ? linked.filter { $0.uuid != d.uuid && $0.isConnected } : []
+        for other in others { brightness.set(other, Double(level) / 100) }
+        print("\(([d] + others).map(\.name).joined(separator: ", ")) brightness \(level)%.")
     } else {
         guard let current = brightness.get(d) else { fail("\(d.name) doesn't support brightness control.") }
         print("\(Int((current * 100).rounded()))%")
