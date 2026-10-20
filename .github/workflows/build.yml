@@ -7,12 +7,20 @@ on:
 permissions:
   contents: write
 
+# One run per branch at a time. A newer push cancels an older branch build, but
+# runs on main wait their turn, so two releases never race.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
   build:
     # Branches in this repo build on push; pull requests only add a build for forks.
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     # Pinned so releases don't change Xcode and SDK when GitHub moves macos-latest.
     runs-on: macos-26
+    # A full build takes about 3 minutes; GitHub's default limit is 6 hours.
+    timeout-minutes: 30
     env:
       HAS_SPARKLE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY != '' }}
     steps:
@@ -23,11 +31,13 @@ jobs:
         run: swift test
       - name: Build app and disk image
         run: ./scripts/build-dmg.sh
-      - name: Check app icon, Help Book and privacy manifest
+      - name: Check bundle resources
         run: |
           test -s build/Unplug.app/Contents/Resources/AppIcon.icns
+          test -s build/Unplug.app/Contents/Resources/Assets.car
           test -s build/Unplug.app/Contents/Resources/Unplug.help/Contents/Resources/en.lproj/search.cshelpindex
-          plutil -lint build/Unplug.app/Contents/Resources/PrivacyInfo.xcprivacy
+          test -s build/Unplug.app/Contents/Resources/Credits.rtf
+          plutil -lint build/Unplug.app/Contents/Info.plist build/Unplug.app/Contents/Resources/PrivacyInfo.xcprivacy
       - name: Smoke-test CLI
         run: |
           ./build/Unplug.app/Contents/Helpers/unplug help

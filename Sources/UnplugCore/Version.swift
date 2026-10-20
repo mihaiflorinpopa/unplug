@@ -7,11 +7,6 @@ public enum UnplugVersion {
         info["CFBundleShortVersionString"] as? String ?? "dev"
     }
 
-    /// The build number (commit count), if known.
-    public static var build: String? {
-        info["CFBundleVersion"] as? String
-    }
-
     /// Works for the app itself and for the CLI at Contents/Helpers/unplug,
     /// including through a symlink on the PATH.
     private static var info: [String: Any] {

@@ -1,0 +1,36 @@
+name: Bug report
+description: Something in Unplug doesn't work as expected.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Unplug and macOS versions
+      placeholder: "Unplug 1.4.6, macOS 27.2"
+    validations:
+      required: true
+  - type: input
+    id: mac
+    attributes:
+      label: Mac
+      placeholder: "MacBook Pro 14-inch, M4"
+  - type: textarea
+    id: displays
+    attributes:
+      label: Displays and how they're connected
+      placeholder: "Two ASUS PG27UCDM through a CalDigit TS5 Plus"
+  - type: textarea
+    id: log
+    attributes:
+      label: Unplug's log
+      description: |
+        Right after the problem, run this in Terminal and paste the output:
+        `/usr/bin/log show --last 10m --predicate 'subsystem == "io.github.mihaiflorinpopa.unplug"'`
+      render: shell

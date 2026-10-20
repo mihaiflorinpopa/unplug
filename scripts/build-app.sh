@@ -12,6 +12,8 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Helpers" "$APP/Contents/Resources"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 # Privacy manifest, where Apple expects it in a Mac app.
 cp Resources/PrivacyInfo.xcprivacy "$APP/Contents/Resources/"
+# Shown by the standard About panel.
+cp Resources/Credits.rtf "$APP/Contents/Resources/"
 
 # Version: VERSION is the single source of truth; the build number is the
 # commit count, so every build from main is unique and increasing.
@@ -31,6 +33,18 @@ for size in 16 32 128 256 512; do
 done
 iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/AppIcon.icns"
 rm -rf "$ICONSET"
+
+# macOS 26 and later show the Icon Composer version (Liquid Glass) from Assets.car,
+# named by CFBundleIconName. macOS 14 and 15 keep using AppIcon.icns above.
+# Absolute paths: actool runs as a service that may keep an old working directory.
+ACTOOL_OUT="$PWD/build/actool"
+rm -rf "$ACTOOL_OUT"
+mkdir -p "$ACTOOL_OUT"
+xcrun actool "$PWD/Resources/icon/Unplug.icon" --compile "$ACTOOL_OUT" --platform macosx \
+    --minimum-deployment-target 14.0 --app-icon Unplug \
+    --output-partial-info-plist "$ACTOOL_OUT/partial.plist" >/dev/null
+cp "$ACTOOL_OUT/Assets.car" "$APP/Contents/Resources/"
+rm -rf "$ACTOOL_OUT"
 
 # Help Book for the Help menu. Its search uses the Spotlight index hiutil builds.
 cp -R Resources/Unplug.help "$APP/Contents/Resources/"

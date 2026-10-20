@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="Resources/icon/icon-1024.png" alt="Unplug app icon" width="160">
+  <img src="Resources/icon/readme-icon.png" alt="Unplug app icon" width="160">
 </p>
 
 <h1 align="center">Unplug</h1>

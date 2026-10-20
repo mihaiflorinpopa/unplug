@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- The original glyph, scaled from the old 824-point tile to the full 1024-point canvas. -->
+  <g transform="scale(1.24272) translate(-100 -100)" fill="none" stroke="#ffffff" stroke-width="44" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="244" y="262" width="536" height="340" rx="48"/>
+    <path d="M478 690 v40 M546 690 v40"/>
+    <path d="M440 730 h144 v32 a72 72 0 0 1 -144 0 z" fill="#ffffff"/>
+    <path d="M512 834 v140"/>
+  </g>
+</svg>
