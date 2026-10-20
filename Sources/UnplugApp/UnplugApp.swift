@@ -9,18 +9,12 @@ struct UnplugApp: App {
 
     var body: some Scene {
         MenuBarExtra("Unplug", systemImage: "display.2", isInserted: $showInMenuBar) {
-            MenuContent(model: delegate.model, updater: delegate.updater, showAbout: { delegate.about.show() })
+            MenuContent(model: delegate.model, updater: delegate.updater)
         }
         // Gives the app menu its Settings… item (⌘,). Help comes from the
-        // Help Book named in Info.plist.
+        // Help Book named in Info.plist, and About from the standard panel.
         Settings {
             SettingsView(model: delegate.model, updater: delegate.updater)
-        }
-        .commands {
-            // The app menu, seen when Unplug runs with a Dock icon.
-            CommandGroup(replacing: .appInfo) {
-                Button("About Unplug") { delegate.about.show() }
-            }
         }
     }
 }
@@ -30,7 +24,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let model = DisplaysModel()
     let updater = Updater()
     private lazy var window = MainWindow(model: model)
-    let about = SimpleWindow(title: "About Unplug") { AboutView() }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         model.onShowInDockChange = { [weak self] in self?.setShowsInDock($0) }

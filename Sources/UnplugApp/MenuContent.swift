@@ -6,7 +6,6 @@ import UnplugCore
 struct MenuContent: View {
     @Bindable var model: DisplaysModel
     var updater: Updater
-    let showAbout: () -> Void
     @Environment(\.openSettings) private var openSettings
 
     var body: some View {
@@ -48,7 +47,11 @@ struct MenuContent: View {
             openSettings()
         }
         .keyboardShortcut(",")
-        Button("About Unplug") { showAbout() }
+        Button("About Unplug") {
+            // The standard About panel: icon, name, version, copyright and Credits.rtf.
+            NSApp.activate()
+            NSApp.orderFrontStandardAboutPanel(nil)
+        }
         // Opens the Help Book that Info.plist names.
         Button("Unplug Help") { NSApp.showHelp(nil) }
         Button("Quit Unplug") { NSApp.terminate(nil) }

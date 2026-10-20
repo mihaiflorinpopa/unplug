@@ -2,6 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>NSPrincipalClass</key>
+    <string>NSApplication</string>
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.utilities</string>
     <key>CFBundleName</key>
     <string>Unplug</string>
     <key>CFBundleDisplayName</key>
@@ -37,6 +45,6 @@
     <key>NSSupportsSuddenTermination</key>
     <true/>
     <key>NSHumanReadableCopyright</key>
-    <string>MIT License</string>
+    <string>© 2026 Mihai Florin Popa. Free and open source under the MIT License.</string>
 </dict>
 </plist>

@@ -192,7 +192,7 @@ final class DisplaysModel {
                 return
             }
             builtinRestoreRetry = Task { @MainActor [weak self] in
-                try? await Task.sleep(nanoseconds: UInt64(attempt + 1) * 1_000_000_000)
+                try? await Task.sleep(for: .seconds(attempt + 1))
                 guard !Task.isCancelled, let self else { return }
                 self.refresh()
                 self.restoreBuiltin(attempt: attempt + 1)
