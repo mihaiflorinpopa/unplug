@@ -68,7 +68,7 @@ unplug disconnect "LG"       # by part of the name, ID or UUID
 unplug connect "LG"
 unplug toggle 3
 unplug connect --all
-unplug brightness "LG" 70    # set brightness in percent (leave out the number to read it)
+unplug brightness "LG" 70    # set brightness in percent; linked displays follow (leave out the number to read it)
 unplug keyboard off          # keyboard backlight: on, off or toggle
 unplug help                  # everything else
 ```
