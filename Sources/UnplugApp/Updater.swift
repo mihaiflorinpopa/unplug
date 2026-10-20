@@ -7,7 +7,6 @@ import Sparkle
 @MainActor
 final class Updater: ObservableObject {
     private let controller: SPUStandardUpdaterController?
-    private var observation: NSKeyValueObservation?
     @Published private(set) var canCheck = false
 
     var isAvailable: Bool { controller != nil }
@@ -16,10 +15,8 @@ final class Updater: ObservableObject {
         let key = Bundle.main.object(forInfoDictionaryKey: "SUPublicEDKey") as? String ?? ""
         controller = key.isEmpty ? nil : SPUStandardUpdaterController(
             startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
-        observation = controller?.updater.observe(\.canCheckForUpdates, options: [.initial, .new]) { [weak self] updater, _ in
-            let canCheck = updater.canCheckForUpdates
-            Task { @MainActor in self?.canCheck = canCheck }
-        }
+        // As in Sparkle's SwiftUI example.
+        controller?.updater.publisher(for: \.canCheckForUpdates).assign(to: &$canCheck)
     }
 
     func checkForUpdates() {

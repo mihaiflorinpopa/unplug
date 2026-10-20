@@ -30,6 +30,12 @@
     <string>https://github.com/mihaiflorinpopa/unplug/releases/latest/download/appcast.xml</string>
     <key>SUEnableAutomaticChecks</key>
     <true/>
+    <key>SUVerifyUpdateBeforeExtraction</key>
+    <true/>
+    <key>SURequireSignedFeed</key>
+    <true/>
+    <key>NSSupportsSuddenTermination</key>
+    <true/>
     <key>NSHumanReadableCopyright</key>
     <string>MIT License</string>
 </dict>

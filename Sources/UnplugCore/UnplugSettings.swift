@@ -5,7 +5,8 @@ import Foundation
 /// `.standard`, since Apple's docs say not to pass your own bundle identifier.
 public enum UnplugSettings {
     public static let domain = "io.github.mihaiflorinpopa.unplug"
-    static let defaults: UserDefaults =
+    /// `UserDefaults` is thread-safe, as Apple documents, but not marked `Sendable`.
+    nonisolated(unsafe) static let defaults: UserDefaults =
         Bundle.main.bundleIdentifier == domain ? .standard : UserDefaults(suiteName: domain) ?? .standard
 
     public static let keyboardBacklightKey = "keyboardBacklightFollowsBuiltin"
