@@ -41,10 +41,25 @@ public enum UnplugSettings {
         set { defaults.set(newValue.sorted(), forKey: "turnedOff") }
     }
 
+    /// UUIDs of the displays whose brightness moves together.
+    public static var linkedBrightness: Set<String> {
+        get { Set(defaults.stringArray(forKey: "linkedBrightness") ?? []) }
+        set { defaults.set(newValue.sorted(), forKey: "linkedBrightness") }
+    }
+
     /// The user turned the keyboard backlight off themselves, so reconnecting the
     /// built-in display must not switch it back on.
     static var keyboardBacklightOffByUser: Bool {
         get { defaults.bool(forKey: "keyboardBacklightOffByUser") }
         set { defaults.set(newValue, forKey: "keyboardBacklightOffByUser") }
+    }
+}
+
+extension [Display] {
+    /// The displays that share one brightness level: the linked ones, once at
+    /// least two are linked. One linked display on its own keeps its slider.
+    public func linkedGroup(_ linked: Set<String>) -> [Display] {
+        let group = filter { linked.contains($0.uuid) }
+        return group.count > 1 ? group : []
     }
 }

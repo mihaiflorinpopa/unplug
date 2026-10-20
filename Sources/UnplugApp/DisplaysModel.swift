@@ -114,27 +114,64 @@ final class DisplaysModel {
 
     /// Updates the slider at once and sends only the latest value to the
     /// display, so dragging doesn't queue up a backlog of slow DDC writes.
+    /// Linked displays all take the level.
     func setBrightness(_ display: Display, _ level: Double) {
-        brightness[display.uuid] = level
+        let group = linkedDisplays
+        let targets = group.contains { $0.uuid == display.uuid } ? group.filter { brightness[$0.uuid] != nil } : [display]
         let isIdle = pendingBrightness.isEmpty
-        pendingBrightness[display.uuid] = (display, level)
-        guard isIdle else { return }
-        sendPendingBrightness()
+        for target in targets {
+            brightness[target.uuid] = level
+            pendingBrightness[target.uuid] = (target, level)
+        }
+        if isIdle { sendPendingBrightness() }
     }
 
+    /// Sends every display's latest level in one go, so one monitor still
+    /// being dragged doesn't hold back the others.
     private func sendPendingBrightness() {
-        guard let (uuid, (display, level)) = pendingBrightness.first else { return }
+        let batch = pendingBrightness
+        guard !batch.isEmpty else { return }
         let control = brightnessControl
         brightnessQueue.async { [weak self] in
-            control.set(display, level)
+            for (display, level) in batch.values { control.set(display, level) }
             Task { @MainActor in
                 guard let self else { return }
-                if let latest = self.pendingBrightness[uuid], latest.1 == level {
+                for (uuid, (_, level)) in batch where self.pendingBrightness[uuid]?.1 == level {
                     self.pendingBrightness[uuid] = nil
                 }
                 self.sendPendingBrightness()
             }
         }
+    }
+
+    /// Displays whose brightness moves together, by UUID, chosen with each
+    /// display's Link Brightness switch.
+    var linkedBrightness: Set<String> {
+        get {
+            access(keyPath: \.linkedBrightness)
+            return UnplugSettings.linkedBrightness
+        }
+        set { withMutation(keyPath: \.linkedBrightness) { UnplugSettings.linkedBrightness = newValue } }
+    }
+
+    /// The linked displays, once at least two are. The menu shows one slider for them.
+    var linkedDisplays: [Display] { displays.linkedGroup(linkedBrightness) }
+
+    /// A display's Link Brightness switch. A display joining takes the level
+    /// the linked displays already have.
+    func linked(_ display: Display) -> Binding<Bool> {
+        Binding(get: { self.linkedBrightness.contains(display.uuid) }, set: { link in
+            guard link else {
+                self.linkedBrightness.remove(display.uuid)
+                return
+            }
+            let level = self.displays.lazy
+                .filter { self.linkedBrightness.contains($0.uuid) }
+                .compactMap { self.brightness[$0.uuid] }
+                .first
+            self.linkedBrightness.insert(display.uuid)
+            if let level { self.setBrightness(display, level) }
+        })
     }
 
     private func turnOffPending() {

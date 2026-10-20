@@ -88,7 +88,7 @@ struct DisplaySections: View {
         ForEach(builtin) { display in
             Section(display.name) {
                 Toggle("Screen", isOn: model.connected(display))
-                brightnessSlider(display)
+                brightnessRows(display)
                 OptionToggle(option: .builtinOffWithExternal, isOn: $model.builtinOffWithExternal)
                 if model.keyboardBacklightAvailable {
                     OptionToggle(option: .keyboardBacklight, isOn: $model.keyboardLightOn)
@@ -101,7 +101,7 @@ struct DisplaySections: View {
             Section("External Displays") {
                 ForEach(external) { display in
                     Toggle(display.name, isOn: model.connected(display))
-                    brightnessSlider(display)
+                    brightnessRows(display)
                     if model.unreachable.contains(display.uuid) {
                         Button("Forget \(display.name)") { model.forget(display) }
                     }
@@ -110,14 +110,16 @@ struct DisplaySections: View {
         }
     }
 
-    /// Laid out like macOS's own Displays settings: a Brightness label, then the slider.
+    /// Laid out like macOS's own Displays settings: a Brightness label, then the
+    /// slider. Linked displays' sliders move together.
     @ViewBuilder
-    private func brightnessSlider(_ display: Display) -> some View {
+    private func brightnessRows(_ display: Display) -> some View {
         if display.isConnected, model.brightness[display.uuid] != nil {
             LabeledContent("Brightness") {
                 BrightnessSlider(model: model, display: display)
                     .frame(minWidth: 300)
             }
+            Toggle("Link Brightness", isOn: model.linked(display))
         }
     }
 }
