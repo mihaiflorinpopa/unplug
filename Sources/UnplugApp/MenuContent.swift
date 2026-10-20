@@ -5,6 +5,7 @@ import UnplugCore
 /// The menu bar menu: only what's used often. Every option is in Settings.
 struct MenuContent: View {
     @ObservedObject var model: DisplaysModel
+    @ObservedObject var updater: Updater
     let showAbout: () -> Void
     @Environment(\.openSettings) private var openSettings
 
@@ -35,6 +36,12 @@ struct MenuContent: View {
         }
 
         Divider()
+        if updater.updateAvailable {
+            Button("Update Available…") {
+                NSApp.activate()
+                updater.checkForUpdates()
+            }
+        }
         Button("Settings…") {
             // A menu bar app isn't active, so bring it forward with its Settings window.
             NSApp.activate()
