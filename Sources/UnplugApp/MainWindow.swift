@@ -110,23 +110,34 @@ struct DisplaySections: View {
         }
     }
 
-    /// Hidden for displays without brightness control.
+    /// Laid out like macOS's own Displays settings: a Brightness label, then the
+    /// slider with a small sun at the low end and a large sun at the high end,
+    /// as the HIG suggests for sliders. Hidden for displays without brightness control.
     @ViewBuilder
     private func brightnessSlider(_ display: Display) -> some View {
         if display.isConnected, let level = model.brightness[display.uuid] {
-            HStack {
-                Image(systemName: "sun.min")
-                Slider(
-                    value: Binding(
-                        get: { model.brightness[display.uuid] ?? level },
-                        set: { model.setBrightness(display, $0) }),
-                    in: 0...1
-                )
-                Text("\(Int((level * 100).rounded()))%")
-                    .monospacedDigit()
-                    .frame(width: 44, alignment: .trailing)
+            LabeledContent("Brightness") {
+                HStack {
+                    Slider(
+                        value: Binding(
+                            get: { model.brightness[display.uuid] ?? level },
+                            set: { model.setBrightness(display, $0) }),
+                        in: 0...1
+                    ) {
+                        // Hidden on screen, read by VoiceOver.
+                        Text("\(display.name) brightness")
+                    } minimumValueLabel: {
+                        Image(systemName: "sun.min")
+                    } maximumValueLabel: {
+                        Image(systemName: "sun.max")
+                    }
+                    .labelsHidden()
+                    .frame(minWidth: 220)
+                    Text("\(Int((level * 100).rounded()))%")
+                        .monospacedDigit()
+                        .frame(width: 40, alignment: .trailing)
+                }
             }
-            .accessibilityLabel("\(display.name) brightness")
         }
     }
 }
