@@ -21,6 +21,11 @@ final class Updater: NSObject, ObservableObject {
             startingUpdater: true, updaterDelegate: nil, userDriverDelegate: self)
         // As in Sparkle's SwiftUI example.
         controller?.updater.publisher(for: \.canCheckForUpdates).assign(to: &$canCheck)
+        // Sparkle's own schedule checks once a day, so also check at launch (that is,
+        // at login). Sparkle allows this right after starting, before the next run loop.
+        if controller?.updater.automaticallyChecksForUpdates == true {
+            controller?.updater.checkForUpdatesInBackground()
+        }
     }
 
     func checkForUpdates() {

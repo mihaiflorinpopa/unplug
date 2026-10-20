@@ -80,7 +80,7 @@ To use Unplug from the Shortcuts app, add a **Run Shell Script** action with, fo
 
 Apple has no public way to disconnect a display. Unplug uses one private macOS call, `CGSConfigureDisplayEnabled`, the same one other display tools use. It lives in a single small file, [`SkyLight.swift`](Sources/UnplugCore/SkyLight.swift), so it's easy to check. Everything else uses Apple's documented [Quartz Display Services](https://developer.apple.com/documentation/coregraphics/quartz-display-services). Changes only last until you log out.
 
-Unplug does nothing in the background. It wakes up only when macOS reports a display change, when you open the menu or press a shortcut, and to check for updates once a day.
+Unplug does nothing in the background. It wakes up only when macOS reports a display change, when you open the menu or press a shortcut, and to check for updates when it opens and once a day.
 
 The keyboard backlight uses another private call, from CoreBrightness, kept in [`KeyboardBacklight.swift`](Sources/UnplugCore/KeyboardBacklight.swift). Brightness uses Apple's private DisplayServices framework for the built-in screen and Apple displays, and the standard DDC/CI protocol for other monitors, all in [`Brightness.swift`](Sources/UnplugCore/Brightness.swift). Brightness is read only when you open the menu or the window.
 

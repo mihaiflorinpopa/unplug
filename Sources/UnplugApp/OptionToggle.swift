@@ -53,5 +53,5 @@ struct Option {
         detail: "Uses Unplug as a regular app, with a Dock icon and a window.")
     static let automaticUpdates = Option(
         title: "Check for Updates Automatically",
-        detail: "Checks for a new version once a day and asks before installing it.")
+        detail: "Checks for a new version when Unplug opens and once a day, and asks before installing it.")
 }
