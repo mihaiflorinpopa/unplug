@@ -61,6 +61,8 @@ if [ ! -d "$SPARKLE" ]; then
     SPARKLE="$(find .build/artifacts -type d -path '*Sparkle.xcframework/macos-*/Sparkle.framework' | head -1)"
 fi
 ditto "$SPARKLE" "$APP/Contents/Frameworks/Sparkle.framework"
+# Sparkle's license asks for its notice in every copy; the framework doesn't carry it.
+cp "$(find .build/artifacts -type f -path '*/Sparkle/LICENSE' | head -1)" "$APP/Contents/Resources/Sparkle LICENSE.txt"
 
 # Updates are verified with this public key. Without it the updater stays off.
 if [ -s Resources/sparkle-public-key.txt ]; then

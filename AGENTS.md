@@ -25,6 +25,7 @@ Unplug is a macOS menu bar app, with an `unplug` CLI inside it, that makes macOS
 - Swift 6 language mode. A `DisplaysModel` property stored elsewhere (UserDefaults, CoreBrightness, SMAppService) must call `access(keyPath:)` and `withMutation(keyPath:)`, or its UI goes stale.
 - Keep the app lightweight, the design minimal and the README easy to read. Keep the app icon's artwork.
 - Sign from the inside out. Never use `codesign --deep`.
+- Third-party code shipped in the app keeps its license notice in the app: `build-app.sh` copies Sparkle's `LICENSE` to `Contents/Resources/Sparkle LICENSE.txt`, and CI checks it.
 - Never weaken or delete tests or assertions to make a check pass.
 - Feature work goes through a pull request, and CI must pass before merging.
 - Commits and pull requests carry no AI-tool attribution: no Co-Authored-By trailers, no "Generated with" lines.
