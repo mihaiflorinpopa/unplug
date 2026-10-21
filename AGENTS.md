@@ -48,4 +48,4 @@ Ask the maintainer before revisiting these.
 
 ## Not verified
 
-macOS 14, 15 and 26 (the menu's slider margins are 22/14 points before macOS 26 and 29/17 from it), Intel Macs, the lid closed with monitors, and virtual "dummy" displays.
+macOS 14, 15 and 26 (the menu's slider margins are 22/14 points before macOS 26 and 29/17 from it), Intel Macs, and virtual "dummy" displays. Unplugging the dock with the lid closed was tested and works: the Mac sleeps, and the built-in screen comes back when the lid opens.

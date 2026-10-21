@@ -75,8 +75,11 @@ final class StatusMenu: NSObject, NSMenuDelegate {
 
         if let error = model.lastError {
             menu.addItem(.separator())
-            // No action, so the menu shows it disabled.
-            menu.addItem(withTitle: error, action: nil, keyEquivalent: "")
+            // Menu items don't wrap, so the menu shows the first sentence; Settings
+            // and the tooltip have all of it. No action, so the item shows disabled.
+            let summary = (error.components(separatedBy: ". ").first ?? error)
+                .trimmingCharacters(in: CharacterSet(charactersIn: "."))
+            menu.addItem(withTitle: summary, action: nil, keyEquivalent: "").toolTip = error
         }
 
         if model.displays.contains(where: { !$0.isConnected }) {
