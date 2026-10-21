@@ -75,8 +75,11 @@ final class StatusMenu: NSObject, NSMenuDelegate {
 
         if let error = model.lastError {
             menu.addItem(.separator())
-            // No action, so the menu shows it disabled.
-            menu.addItem(withTitle: error, action: nil, keyEquivalent: "")
+            // Menu items don't wrap, so the menu shows the first sentence; Settings
+            // and the tooltip have all of it. No action, so the item shows disabled.
+            let summary = (error.components(separatedBy: ". ").first ?? error)
+                .trimmingCharacters(in: CharacterSet(charactersIn: "."))
+            menu.addItem(withTitle: summary, action: nil, keyEquivalent: "").toolTip = error
         }
 
         if model.displays.contains(where: { !$0.isConnected }) {
@@ -109,7 +112,8 @@ final class StatusMenu: NSObject, NSMenuDelegate {
             self?.model.setBrightness(display, $0)
         }
         sliders[display.uuid] = view
-        let row = NSMenuItem()
+        // Not drawn with a view, but still used for type-select and accessibility.
+        let row = NSMenuItem(title: "\(name) brightness", action: nil, keyEquivalent: "")
         row.view = view
         menu.addItem(row)
     }
@@ -190,6 +194,17 @@ final class StatusMenu: NSObject, NSMenuDelegate {
               let index = appMenu.items.firstIndex(where: { $0.keyEquivalent == "," })
         else { return NSSound.beep() }
         appMenu.performActionForItem(at: index)
+        // Workaround: since macOS 14, activate() is a request the system can decline,
+        // for example while another app is in front, and Settings then opens behind
+        // that app. orderFrontRegardless() shows it on top anyway; it becomes active
+        // when clicked. The identifier is SwiftUI's (undocumented); if it changes,
+        // nothing is found and only activate() applies. SwiftUI creates the window
+        // on the next turn of the run loop.
+        Task { @MainActor in
+            await Task.yield()
+            NSApp.windows.first { $0.identifier?.rawValue == "com_apple_SwiftUI_Settings_window" }?
+                .orderFrontRegardless()
+        }
     }
 
     /// The standard About panel: icon, name, version, copyright and Credits.rtf.
@@ -230,6 +245,7 @@ final class BrightnessMenuView: NSView {
         percent.font = .monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
         percent.textColor = .secondaryLabelColor
         percent.alignment = .right
+        hideFromVoiceOver(percent)
 
         let stack = NSStackView(views: [sun("sun.min.fill"), slider, sun("sun.max.fill"), percent])
         stack.spacing = 6
@@ -259,21 +275,34 @@ final class BrightnessMenuView: NSView {
     func show(_ level: Double) {
         guard !dragging else { return }
         slider.doubleValue = level
+        showPercent(level)
+    }
+
+    /// The percentage next to the slider, which VoiceOver reads as the slider's value.
+    private func showPercent(_ level: Double) {
         percent.stringValue = "\(Int((level * 100).rounded()))%"
+        slider.setAccessibilityValueDescription(percent.stringValue)
     }
 
     private func sun(_ name: String) -> NSImageView {
         let view = NSImageView(image: NSImage(systemSymbolName: name, accessibilityDescription: nil) ?? NSImage())
         view.contentTintColor = .labelColor
-        // Decorative: VoiceOver reads the slider's own label instead.
-        view.setAccessibilityElement(false)
+        hideFromVoiceOver(view)
         return view
+    }
+
+    /// The suns and the percentage only decorate the slider, so VoiceOver skips
+    /// them and reads the slider's label and value instead. A control reports
+    /// accessibility through its cell, so both are hidden.
+    private func hideFromVoiceOver(_ control: NSControl) {
+        control.setAccessibilityElement(false)
+        control.cell?.setAccessibilityElement(false)
     }
 
     @objc private func changed() {
         // A continuous slider sends its last action on mouse up.
         dragging = NSApp.currentEvent?.type != .leftMouseUp
-        percent.stringValue = "\(Int((slider.doubleValue * 100).rounded()))%"
+        showPercent(slider.doubleValue)
         onChange(slider.doubleValue)
     }
 }

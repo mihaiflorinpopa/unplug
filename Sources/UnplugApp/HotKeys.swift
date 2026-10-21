@@ -31,13 +31,16 @@ final class HotKeys {
 
     /// Registers `keyCode` (a `kVK_` constant) with Carbon modifier flags
     /// (`cmdKey`, `optionKey`, ...). Returns false if another app already owns it.
+    /// Exclusive, so only Unplug acts on the shortcut while it runs. Without it,
+    /// every app that registered the same keys would react, and registering
+    /// would never fail.
     @discardableResult
     func register(keyCode: Int, modifiers: Int, action: @escaping () -> Void) -> Bool {
         let id = UInt32(actions.count + 1)
         var ref: EventHotKeyRef?
         let status = RegisterEventHotKey(
             UInt32(keyCode), UInt32(modifiers), EventHotKeyID(signature: Self.signature, id: id),
-            GetApplicationEventTarget(), 0, &ref)
+            GetApplicationEventTarget(), OptionBits(kEventHotKeyExclusive), &ref)
         guard status == OSStatus(noErr), let ref else { return false }
         refs.append(ref)
         actions[id] = action

@@ -19,6 +19,7 @@ Unplug is a macOS menu bar app, with an `unplug` CLI inside it, that makes macOS
 
 ## Rules
 
+- Follow the upstream documentation of every component, for the version the project uses: Apple's (AppKit, SwiftUI, Observation, CoreGraphics, ServiceManagement, Carbon, the HIG, App Review Guidelines), Sparkle's, SwiftPM's and GitHub Actions'. Read it before changing how a component is used, quote it in the pull request, and say plainly when something is a workaround the docs don't describe. Apple's pages are rendered with JavaScript, so fetch their JSON: `https://developer.apple.com/tutorials/data/documentation/<path>.json`, and `…/tutorials/data/design/human-interface-guidelines/<page>.json` for the HIG. The SDK headers (`xcrun --show-sdk-path`) settle availability and deprecation.
 - Event-driven only: no repeating timers, polling or background loops. Changes come from `CGDisplayRegisterReconfigurationCallback`, wake notifications and the menu opening. Brightness is read only when the menu or a window opens.
 - Use Apple's documented APIs and follow the HIG wherever they cover it. Private APIs are only for what has no public API (turning a display off, Apple Silicon and DDC brightness, the keyboard backlight), and stay in `SkyLight.swift`, `Brightness.swift` and `KeyboardBacklight.swift`. Display changes use the `.forSession` scope.
 - Swift 6 language mode. A `DisplaysModel` property stored elsewhere (UserDefaults, CoreBrightness, SMAppService) must call `access(keyPath:)` and `withMutation(keyPath:)`, or its UI goes stale.
@@ -48,4 +49,4 @@ Ask the maintainer before revisiting these.
 
 ## Not verified
 
-macOS 14, 15 and 26 (the menu's slider margins are 22/14 points before macOS 26 and 29/17 from it), Intel Macs, the lid closed with monitors, and virtual "dummy" displays.
+macOS 14, 15 and 26 (the menu's slider margins are 22/14 points before macOS 26 and 29/17 from it), Intel Macs, and virtual "dummy" displays. Unplugging the dock with the lid closed was tested and works: the Mac sleeps, and the built-in screen comes back when the lid opens.
