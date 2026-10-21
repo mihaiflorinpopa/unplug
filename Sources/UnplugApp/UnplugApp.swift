@@ -25,7 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private lazy var statusMenu = StatusMenu(model: model, updater: updater)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        statusMenu.isVisible = model.showInMenuBar
+        _ = statusMenu
         model.onShowInMenuBarChange = { [weak self] in self?.statusMenu.isVisible = $0 }
         model.onShowInDockChange = { [weak self] in self?.setShowsInDock($0) }
         if model.showInDock || !model.showInMenuBar { setShowsInDock(true) }

@@ -75,7 +75,8 @@ final class StatusMenu: NSObject, NSMenuDelegate {
 
         if let error = model.lastError {
             menu.addItem(.separator())
-            menu.addItem(withTitle: error, action: nil, keyEquivalent: "").isEnabled = false
+            // No action, so the menu shows it disabled.
+            menu.addItem(withTitle: error, action: nil, keyEquivalent: "")
         }
 
         if model.displays.contains(where: { !$0.isConnected }) {
@@ -264,6 +265,8 @@ final class BrightnessMenuView: NSView {
     private func sun(_ name: String) -> NSImageView {
         let view = NSImageView(image: NSImage(systemSymbolName: name, accessibilityDescription: nil) ?? NSImage())
         view.contentTintColor = .labelColor
+        // Decorative: VoiceOver reads the slider's own label instead.
+        view.setAccessibilityElement(false)
         return view
     }
 

@@ -50,6 +50,11 @@ final class DisplaysModel {
     @ObservationIgnored private var follower = BuiltinFollower([])
     @ObservationIgnored private var builtinRestoreRetry: Task<Void, Never>?
     @ObservationIgnored private var wakeObservers: [NSObjectProtocol] = []
+    @ObservationIgnored private var activeObserver: NSObjectProtocol?
+    @ObservationIgnored private var suddenTerminationDisabled = false
+    /// The last "shortcut already belongs to another app" message, so it can be
+    /// cleared once the shortcuts work, without clearing other errors.
+    @ObservationIgnored private var shortcutError: String?
     private let log = DisplayManager.log
     private var builtin: Display? { displays.first(where: \.isBuiltin) }
 
@@ -79,6 +84,12 @@ final class DisplaysModel {
                 }
             }
         }
+        // Coming back from System Settings, for example after allowing the login item.
+        activeObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.rereadSystemSettings() }
+        }
         applyShortcuts()
     }
 
@@ -86,6 +97,21 @@ final class DisplaysModel {
         displays = manager.displays()
         // A display that is back online no longer needs forgetting.
         unreachable.formIntersection(displays.filter { !$0.isConnected }.map(\.uuid))
+        updateSuddenTermination()
+    }
+
+    /// macOS can end an app at logout without telling it (sudden termination).
+    /// While a keyboard backlight level waits to be restored, quitting has work
+    /// to do (applicationWillTerminate), so sudden termination is off until then.
+    private func updateSuddenTermination() {
+        let quitHasWork = reconnectOnQuit && KeyboardBacklight.hasSavedLevel
+        guard quitHasWork != suddenTerminationDisabled else { return }
+        if quitHasWork {
+            ProcessInfo.processInfo.disableSuddenTermination()
+        } else {
+            ProcessInfo.processInfo.enableSuddenTermination()
+        }
+        suddenTerminationDisabled = quitHasWork
     }
 
     /// The menu bar menu opened: re-read what may have changed elsewhere.
@@ -93,7 +119,11 @@ final class DisplaysModel {
         log.debug("Menu bar menu opened")
         refresh()
         refreshBrightness()
-        // The keyboard's brightness keys or System Settings may have changed these.
+        rereadSystemSettings()
+    }
+
+    /// The keyboard's brightness keys or System Settings may have changed these.
+    private func rereadSystemSettings() {
         withMutation(keyPath: \.keyboardLightOn) {}
         withMutation(keyPath: \.launchAtLogin) {}
     }
@@ -108,7 +138,11 @@ final class DisplaysModel {
                 guard let level = control.get(display) else { continue }
                 levels[display.uuid] = level
             }
-            Task { @MainActor in self?.brightness = levels }
+            Task { @MainActor in
+                guard let self else { return }
+                // A level set while this read ran wins over the one read.
+                self.brightness = levels.merging(self.pendingBrightness.mapValues { $0.1 }) { $1 }
+            }
         }
     }
 
@@ -343,19 +377,22 @@ final class DisplaysModel {
 
     private func applyShortcuts() {
         hotKeys.unregisterAll()
-        guard shortcutsEnabled else { return }
         var taken: [String] = []
-        let reconnect = reconnectAllShortcut
-        if !hotKeys.register(keyCode: reconnect.keyCode, modifiers: reconnect.modifiers, action: { [weak self] in
-            Task { @MainActor in self?.connectAll() }
-        }) { taken.append(reconnect.description) }
-        let builtin = toggleBuiltinShortcut
-        if !hotKeys.register(keyCode: builtin.keyCode, modifiers: builtin.modifiers, action: { [weak self] in
-            Task { @MainActor in self?.toggleBuiltin() }
-        }) { taken.append(builtin.description) }
-        if !taken.isEmpty {
-            lastError = "\(taken.joined(separator: " and ")) already belongs to another app. Choose another shortcut in Settings > Shortcuts."
+        if shortcutsEnabled {
+            let reconnect = reconnectAllShortcut
+            if !hotKeys.register(keyCode: reconnect.keyCode, modifiers: reconnect.modifiers, action: { [weak self] in
+                Task { @MainActor in self?.connectAll() }
+            }) { taken.append(reconnect.description) }
+            let builtin = toggleBuiltinShortcut
+            if !hotKeys.register(keyCode: builtin.keyCode, modifiers: builtin.modifiers, action: { [weak self] in
+                Task { @MainActor in self?.toggleBuiltin() }
+            }) { taken.append(builtin.description) }
         }
+        let error = taken.isEmpty ? nil
+            : "\(taken.joined(separator: " and ")) \(taken.count == 1 ? "already belongs" : "already belong") to another app. Choose another shortcut in Settings > Shortcuts."
+        // Replace an earlier shortcut error, but leave other errors alone.
+        if error != nil || lastError == shortcutError { lastError = error }
+        shortcutError = error
     }
 
     var showInMenuBar: Bool {

@@ -24,10 +24,9 @@ final class MainWindow: NSObject, NSWindowDelegate {
 
     private func makeWindow() -> NSWindow {
         let window = NSWindow(contentViewController: NSHostingController(rootView: DisplaysForm(model: model)))
+        // Already titled, closable, resizable and miniaturizable, and not released when closed.
         window.title = "Unplug"
-        window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
         window.setContentSize(NSSize(width: 420, height: 480))
-        window.isReleasedWhenClosed = false
         window.delegate = self
         window.center()
         return window

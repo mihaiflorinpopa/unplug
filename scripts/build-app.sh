@@ -68,8 +68,11 @@ if [ -s Resources/sparkle-public-key.txt ]; then
         "$APP/Contents/Info.plist"
 fi
 
-# Ad-hoc signature so macOS will launch a locally built app.
-codesign --force --deep --sign - "$APP"
+# Ad-hoc signature so macOS will launch a locally built app. Signed from the inside
+# out, without --deep, as Apple and Sparkle ask: Sparkle.framework keeps the
+# signatures it ships with, and the CLI gets an identifier of its own.
+codesign --force --sign - --identifier io.github.mihaiflorinpopa.unplug.cli "$APP/Contents/Helpers/unplug"
+codesign --force --sign - "$APP"
 
 echo "Built $APP $VERSION ($BUILD)"
 echo "CLI: $APP/Contents/Helpers/unplug (symlink it onto your PATH to use it directly)"

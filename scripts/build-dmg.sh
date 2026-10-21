@@ -15,7 +15,8 @@ mkdir -p "$STAGING"
 cp -R build/Unplug.app "$STAGING/"
 ln -s /Applications "$STAGING/Applications"
 
-hdiutil create -volname "Unplug" -srcfolder "$STAGING" -fs HFS+ -format UDZO -ov "$DMG"
+# APFS with LZFSE compression, as Sparkle recommends for disk images.
+hdiutil create -volname "Unplug" -srcfolder "$STAGING" -fs APFS -format ULFO -ov "$DMG"
 rm -rf "$STAGING"
 
 echo "Built $DMG"
