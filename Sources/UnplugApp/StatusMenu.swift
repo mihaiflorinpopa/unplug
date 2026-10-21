@@ -193,6 +193,17 @@ final class StatusMenu: NSObject, NSMenuDelegate {
               let index = appMenu.items.firstIndex(where: { $0.keyEquivalent == "," })
         else { return NSSound.beep() }
         appMenu.performActionForItem(at: index)
+        // Workaround: since macOS 14, activate() is a request the system can decline,
+        // for example while another app is in front, and Settings then opens behind
+        // that app. orderFrontRegardless() shows it on top anyway; it becomes active
+        // when clicked. The identifier is SwiftUI's (undocumented); if it changes,
+        // nothing is found and only activate() applies. SwiftUI creates the window
+        // on the next turn of the run loop.
+        Task { @MainActor in
+            await Task.yield()
+            NSApp.windows.first { $0.identifier?.rawValue == "com_apple_SwiftUI_Settings_window" }?
+                .orderFrontRegardless()
+        }
     }
 
     /// The standard About panel: icon, name, version, copyright and Credits.rtf.
