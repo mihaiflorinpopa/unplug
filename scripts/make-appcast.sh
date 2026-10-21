@@ -15,8 +15,9 @@ PUBLIC_KEY="$(/usr/libexec/PlistBuddy -c "Print :SUPublicEDKey" "$PLIST" 2>/dev/
 SIGN_UPDATE="$(find .build/artifacts -type f -name sign_update | head -1)"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
-(umask 077 && printf '%s' "$SPARKLE_PRIVATE_KEY" > "$TMP/key")
-ATTRIBUTES="$("$SIGN_UPDATE" --ed-key-file "$TMP/key" "$DMG")" # sparkle:edSignature="..." length="..."
+# The private key goes to sign_update on stdin ("-"), never into a file.
+sign() { printf '%s' "$SPARKLE_PRIVATE_KEY" | "$SIGN_UPDATE" --ed-key-file - "$@"; }
+ATTRIBUTES="$(sign "$DMG")" # sparkle:edSignature="..." length="..."
 
 # Make sure the private key matches the public key inside the app, otherwise
 # every installed copy would reject the update.
@@ -45,7 +46,7 @@ cat > build/appcast.xml <<XML
       <link>https://github.com/mihaiflorinpopa/unplug/releases/tag/v$VERSION</link>
       <sparkle:version>$BUILD</sparkle:version>
       <sparkle:shortVersionString>$VERSION</sparkle:shortVersionString>
-      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <sparkle:minimumSystemVersion>14.0.0</sparkle:minimumSystemVersion>
 $NOTES
       <enclosure url="$URL" $ATTRIBUTES type="application/octet-stream"/>
     </item>
@@ -53,6 +54,6 @@ $NOTES
 </rss>
 XML
 # Sign the feed itself (SURequireSignedFeed): sign_update embeds the signature in the XML.
-"$SIGN_UPDATE" --ed-key-file "$TMP/key" build/appcast.xml
-"$SIGN_UPDATE" --verify --ed-key-file "$TMP/key" build/appcast.xml
+sign build/appcast.xml
+sign --verify build/appcast.xml
 echo "Wrote and signed build/appcast.xml for $VERSION ($BUILD)"

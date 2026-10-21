@@ -62,6 +62,11 @@ public enum KeyboardBacklight {
         return get.2(get.0, get.1, id)
     }
 
+    /// True while a level saved by `turnOff()` waits to be restored.
+    public static var hasSavedLevel: Bool {
+        FileManager.default.fileExists(atPath: fileURL.path)
+    }
+
     /// True while the backlight is off. Reads the real brightness, so it stays
     /// right after a restart or a change made with the brightness keys.
     public static var isOff: Bool {

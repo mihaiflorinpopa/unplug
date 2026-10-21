@@ -21,8 +21,8 @@ public final class DisplayMonitor: @unchecked Sendable {
     }
 
     private static let callback: CGDisplayReconfigurationCallBack = { _, flags, userInfo in
-        // macOS calls once before the change (beginConfigurationFlag) and once per
-        // display after it; only the "after" calls describe the new state.
+        // macOS calls once per display before the change (beginConfigurationFlag)
+        // and once per display after it; only the "after" calls describe the new state.
         guard !flags.contains(.beginConfigurationFlag), let userInfo else { return }
         let monitor = Unmanaged<DisplayMonitor>.fromOpaque(userInfo).takeUnretainedValue()
         // The calls arrive on the main thread, where the app registered, so the
