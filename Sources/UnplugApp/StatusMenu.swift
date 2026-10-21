@@ -112,7 +112,8 @@ final class StatusMenu: NSObject, NSMenuDelegate {
             self?.model.setBrightness(display, $0)
         }
         sliders[display.uuid] = view
-        let row = NSMenuItem()
+        // Not drawn with a view, but still used for type-select and accessibility.
+        let row = NSMenuItem(title: "\(name) brightness", action: nil, keyEquivalent: "")
         row.view = view
         menu.addItem(row)
     }
@@ -244,6 +245,7 @@ final class BrightnessMenuView: NSView {
         percent.font = .monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
         percent.textColor = .secondaryLabelColor
         percent.alignment = .right
+        hideFromVoiceOver(percent)
 
         let stack = NSStackView(views: [sun("sun.min.fill"), slider, sun("sun.max.fill"), percent])
         stack.spacing = 6
@@ -273,21 +275,34 @@ final class BrightnessMenuView: NSView {
     func show(_ level: Double) {
         guard !dragging else { return }
         slider.doubleValue = level
+        showPercent(level)
+    }
+
+    /// The percentage next to the slider, which VoiceOver reads as the slider's value.
+    private func showPercent(_ level: Double) {
         percent.stringValue = "\(Int((level * 100).rounded()))%"
+        slider.setAccessibilityValueDescription(percent.stringValue)
     }
 
     private func sun(_ name: String) -> NSImageView {
         let view = NSImageView(image: NSImage(systemSymbolName: name, accessibilityDescription: nil) ?? NSImage())
         view.contentTintColor = .labelColor
-        // Decorative: VoiceOver reads the slider's own label instead.
-        view.setAccessibilityElement(false)
+        hideFromVoiceOver(view)
         return view
+    }
+
+    /// The suns and the percentage only decorate the slider, so VoiceOver skips
+    /// them and reads the slider's label and value instead. A control reports
+    /// accessibility through its cell, so both are hidden.
+    private func hideFromVoiceOver(_ control: NSControl) {
+        control.setAccessibilityElement(false)
+        control.cell?.setAccessibilityElement(false)
     }
 
     @objc private func changed() {
         // A continuous slider sends its last action on mouse up.
         dragging = NSApp.currentEvent?.type != .leftMouseUp
-        percent.stringValue = "\(Int((slider.doubleValue * 100).rounded()))%"
+        showPercent(slider.doubleValue)
         onChange(slider.doubleValue)
     }
 }
