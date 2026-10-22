@@ -27,13 +27,14 @@ Unplug is a macOS menu bar app, with an `unplug` CLI inside it, that makes macOS
 - Sign from the inside out. Never use `codesign --deep`.
 - Third-party code shipped in the app keeps its license notice in the app: `build-app.sh` copies Sparkle's `LICENSE` to `Contents/Resources/Sparkle LICENSE.txt`, and CI checks it.
 - Never weaken or delete tests or assertions to make a check pass.
-- Feature work goes through a pull request, and CI must pass before merging.
+- Feature work goes through a pull request, and CI must pass before merging. A ruleset on `main` enforces both and blocks force pushes.
 - Commits and pull requests carry no AI-tool attribution: no Co-Authored-By trailers, no "Generated with" lines.
 
 ## Releases
 
 - Bump `VERSION` and merge to main. CI builds the .dmg, signs it and `appcast.xml` (Sparkle EdDSA, the `SPARKLE_PRIVATE_KEY` secret) and publishes the GitHub release. Merges that don't change `VERSION` don't release.
 - The build number is the commit count.
+- Releases are immutable: once published, a release's assets and tag can't change. Fix a broken release with a new `VERSION`.
 - CI runs on a pinned `macos-26` runner (bump it by hand when GitHub retires it). Actions are pinned to commit SHAs, and Dependabot updates them and Sparkle.
 
 ## Already decided
