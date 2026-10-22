@@ -1,0 +1,8 @@
+# GitHub's generated release notes, which Unplug's update dialog also shows, list only
+# changes people notice. CI, documentation and version-bump pull requests are labeled
+# "internal"; Dependabot labels its own "dependencies".
+changelog:
+  exclude:
+    labels:
+      - internal
+      - dependencies
