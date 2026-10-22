@@ -119,7 +119,7 @@ jobs:
           # author, pull request link, version in titles and Full Changelog line go; the
           # release page keeps them. With no change left, the update has no notes.
           gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" -f tag_name="$TAG" -f target_commitish="$GITHUB_SHA" --jq .body \
-            | sed -E 's/ by @[^ ]+ in https:\/\/github\.com\/[^ ]+$//; s/, version [0-9.]+$//; /^\*\*Full Changelog\*\*/d' > build/release-notes.md \
+            | sed -E 's/ by @[^ ]+ in https:\/\/github\.com\/[^ ]+$//; s/, version [0-9.]+$//; /^\*\*Full Changelog\*\*/d; /^<!--.*-->$/d' > build/release-notes.md \
             && grep -q '^\* ' build/release-notes.md \
             && gh api markdown -F text=@build/release-notes.md -f mode=gfm -f context="$GITHUB_REPOSITORY" > build/release-notes.html \
             || rm -f build/release-notes.html
