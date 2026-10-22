@@ -8,7 +8,7 @@ Unplug is a macOS menu bar app, with an `unplug` CLI inside it, that makes macOS
 - `./scripts/build-app.sh` builds `build/Unplug.app` (universal, ad-hoc signed). `./scripts/build-dmg.sh` also makes the .dmg.
 - To try a build, quit the installed Unplug first (two copies both react to displays and shortcuts), then `open build/Unplug.app`.
 - Logs: `/usr/bin/log show --last 10m --predicate 'subsystem == "io.github.mihaiflorinpopa.unplug"'`. In zsh, plain `log` is a shell builtin. Debug lines, such as menu opens, only show in `log stream --level debug`.
-- Universal builds made with Xcode 27 (Swift 6.4) record `sdk 14.0`, the deployment target. CI (Xcode 26) records the real SDK and checks it.
+- Swift Build (the default build system from Swift 6.4, Xcode 27) records the deployment target (`sdk 14.0`) as the SDK version, so macOS would treat local builds like macOS 14. `build-app.sh` detects that and relinks with the real SDK (`-platform_version`, only when needed: Swift 6.3 passes the flag to clang, which rejects it), and fails if either binary records another SDK. CI checks it too.
 
 ## Layout
 

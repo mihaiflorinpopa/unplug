@@ -3,8 +3,20 @@
 set -eu
 cd "$(dirname "$0")/.."
 
-swift build -c release --arch arm64 --arch x86_64
-BIN="$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)"
+SDK="$(xcrun --show-sdk-version)"
+set -- -c release --arch arm64 --arch x86_64
+swift build "$@"
+BIN="$(swift build "$@" --show-bin-path)"
+# macOS gives an app the behavior of the SDK its binary records. Swift Build, the default
+# build system from Swift 6.4 (Xcode 27), records the deployment target instead, so the app
+# would behave like macOS 14. If so, relink with the real SDK (man ld: -platform_version;
+# 14.0 is the deployment target in Package.swift). Only then: Swift 6.3 records the SDK
+# right and hands linker flags to clang, which rejects this one.
+if xcrun vtool -show-build "$BIN/UnplugApp" | grep " sdk " | grep -v " sdk $SDK$" >/dev/null; then
+    set -- "$@" -Xlinker -platform_version -Xlinker macos -Xlinker 14.0 -Xlinker "$SDK"
+    swift build "$@"
+    BIN="$(swift build "$@" --show-bin-path)"
+fi
 
 APP=build/Unplug.app
 rm -rf "$APP"
@@ -53,6 +65,12 @@ hiutil -I corespotlight -Caf "$HELP/search.cshelpindex" "$HELP"
 cp "$BIN/UnplugApp" "$APP/Contents/MacOS/Unplug"
 # Helpers/, not MacOS/: "unplug" and "Unplug" collide on case-insensitive volumes.
 cp "$BIN/unplug" "$APP/Contents/Helpers/unplug"
+for binary in "$APP/Contents/MacOS/Unplug" "$APP/Contents/Helpers/unplug"; do
+    if xcrun vtool -show-build "$binary" | grep " sdk " | grep -v " sdk $SDK$" >/dev/null; then
+        echo "$binary records an SDK other than $SDK, so macOS would treat it like an older system." >&2
+        exit 1
+    fi
+done
 
 # Sparkle (auto-updates) is a binary framework the app loads from Frameworks/.
 mkdir -p "$APP/Contents/Frameworks"
