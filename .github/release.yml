@@ -1,8 +1,8 @@
-# GitHub's generated release notes, which Unplug's update dialog also shows, list only
-# changes people notice. CI, documentation and version-bump pull requests are labeled
-# "internal"; Dependabot labels its own "dependencies".
+# Release notes, on GitHub and in the app's update dialog, list only changes users notice.
+# Label everything else (CI, build scripts, docs, version bumps) skip-release-notes;
+# Dependabot labels its own pull requests dependencies.
 changelog:
   exclude:
     labels:
-      - internal
+      - skip-release-notes
       - dependencies
