@@ -98,7 +98,7 @@ Unplug logs what it does to the built-in screen, and any display change macOS re
 log show --last 10m --predicate 'subsystem == "io.github.mihaiflorinpopa.unplug"'
 ```
 
-To release, change the version in [`VERSION`](VERSION) and merge to main. CI publishes the GitHub release with the .dmg and the update feed (`appcast.xml`). Updates are checked with [Sparkle](https://sparkle-project.org). The .dmg and the update feed are both signed with the key in the `SPARKLE_PRIVATE_KEY` repository secret, and the app accepts neither unless the signature matches. Its public half is [`Resources/sparkle-public-key.txt`](Resources/sparkle-public-key.txt).
+To release, change the version in [`VERSION`](VERSION) and merge to main. CI publishes the GitHub release with the .dmg and the update feed (`appcast.xml`). Updates are checked with [Sparkle](https://sparkle-project.org). The .dmg and the update feed are both signed with the key in the `SPARKLE_PRIVATE_KEY` secret of the `release` environment, which only `main` can use, and the app accepts neither unless the signature matches. Its public half is [`Resources/sparkle-public-key.txt`](Resources/sparkle-public-key.txt).
 
 ## Author
 

@@ -4,8 +4,10 @@ on:
   push:
   pull_request:
 
+# Read-only by default; only the release job gets write access and the signing key
+# (GitHub, "Secure use reference": least privilege for GITHUB_TOKEN).
 permissions:
-  contents: write
+  contents: read
 
 # One run per branch at a time, so two releases never race. A newer push cancels
 # an older branch build. On main, a running build finishes, but a newer push
@@ -23,14 +25,13 @@ jobs:
     runs-on: macos-26
     # A full build takes about 3 minutes; GitHub's default limit is 6 hours.
     timeout-minutes: 30
-    env:
-      HAS_SPARKLE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY != '' }}
+    outputs:
+      release-tag: ${{ steps.version.outputs.tag }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # full history for the build number and existing tags
-          # No step pushes with git, so the write token isn't left in .git/config.
-          persist-credentials: false
+          persist-credentials: false # no step pushes with git
       - name: Run tests
         run: swift test
       - name: Build app and disk image
@@ -61,35 +62,67 @@ jobs:
           sleep 5
           kill -0 "$PID" # still running, so Sparkle and the app loaded
           kill "$PID"
-      - name: Sign update and write appcast
-        if: env.HAS_SPARKLE_KEY == 'true'
-        env:
-          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          # The notes GitHub generates for the release, as HTML for the update dialog.
-          # Without them the update still publishes, just with no notes.
-          gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" \
-              -f tag_name="v$(tr -d '[:space:]' < VERSION)" -f target_commitish="$GITHUB_SHA" --jq .body > build/release-notes.md \
-            && gh api markdown -F text=@build/release-notes.md -f mode=gfm -f context="$GITHUB_REPOSITORY" > build/release-notes.html \
-            || rm -f build/release-notes.html
-          ./scripts/make-appcast.sh
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: Unplug-dmg
           path: build/Unplug-*.dmg
           archive: false # a .dmg is compressed already
           retention-days: 14 # releases keep their own copy
-      # Bumping VERSION on main publishes a release; other pushes to main skip it.
-      - name: Publish release for a new version
+      # Bumping VERSION on main publishes a release; other pushes to main don't.
+      - name: Check for a new version
+        id: version
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           TAG="v$(tr -d '[:space:]' < VERSION)"
           if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
             echo "$TAG already released"
           else
-            # appcast.xml is the update feed; it exists once the Sparkle key secret is set.
-            gh release create "$TAG" build/Unplug-*.dmg $(ls build/appcast.xml 2>/dev/null) --target "$GITHUB_SHA" --title "Unplug $TAG" --generate-notes
+            echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           fi
+      # The release job signs this exact .dmg, and reads the build number and public key from the app.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: steps.version.outputs.tag != ''
+        with:
+          name: release-input
+          path: |
+            build/Unplug-*.dmg
+            build/Unplug.app/Contents/Info.plist
+          retention-days: 1
+
+  release:
+    needs: build
+    if: needs.build.outputs.release-tag != ''
+    runs-on: macos-26
+    timeout-minutes: 30
+    # The Sparkle key lives in this environment, which only main can deploy to.
+    environment: release
+    permissions:
+      contents: write # create the release
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-input
+          path: build
+      - name: Fetch Sparkle's signing tools
+        run: swift package resolve
+      - name: Sign update and write appcast
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.build.outputs.release-tag }}
+        run: |
+          # The notes GitHub generates for the release, as HTML for the update dialog.
+          # Without them the update still publishes, just with no notes.
+          gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" -f tag_name="$TAG" -f target_commitish="$GITHUB_SHA" --jq .body > build/release-notes.md \
+            && gh api markdown -F text=@build/release-notes.md -f mode=gfm -f context="$GITHUB_REPOSITORY" > build/release-notes.html \
+            || rm -f build/release-notes.html
+          ./scripts/make-appcast.sh
+      # Only with the appcast: a release without it could never update itself.
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.build.outputs.release-tag }}
+        run: gh release create "$TAG" build/Unplug-*.dmg build/appcast.xml --target "$GITHUB_SHA" --title "Unplug $TAG" --generate-notes
