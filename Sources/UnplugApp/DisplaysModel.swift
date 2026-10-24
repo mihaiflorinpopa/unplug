@@ -43,7 +43,8 @@ final class DisplaysModel {
     /// Called when "Show in Menu Bar" changes, to show or hide the menu bar item.
     @ObservationIgnored var onShowInMenuBarChange: ((Bool) -> Void)?
 
-    /// Displays still to turn off again after a restart. Some monitors come
+    /// Displays still to turn off again ("Keep Displays Off"), after a restart or
+    /// when they're plugged back in. Some monitors come
     /// online a moment after login, so this is retried on each display change.
     @ObservationIgnored private var pendingTurnOff: Set<String> = []
     /// Decides when the built-in screen turns off or back on with monitors.
@@ -67,6 +68,9 @@ final class DisplaysModel {
         follower = BuiltinFollower(displays)
         monitor = DisplayMonitor { [weak self] in
             Task { @MainActor in
+                // Keep Displays Off: a display the user turned off stays off when it's
+                // plugged back in. Turning it on removes it from turnedOff.
+                if UnplugSettings.keepOffAfterRestart { self?.pendingTurnOff = UnplugSettings.turnedOff }
                 self?.turnOffPending()
                 self?.brightnessControl.reset()
                 self?.refresh()
@@ -211,7 +215,11 @@ final class DisplaysModel {
     private func turnOffPending() {
         // Turning a display back on in the meantime (CLI included) cancels it.
         pendingTurnOff.formIntersection(UnplugSettings.turnedOff)
-        pendingTurnOff = pendingTurnOff.filter { !manager.turnOffAgain(uuid: $0) }
+        pendingTurnOff = pendingTurnOff.filter { uuid in
+            guard manager.turnOffAgain(uuid: uuid) else { return true }
+            log.notice("Turned a display off again (Keep Displays Off)")
+            return false
+        }
     }
 
     /// Turns the built-in screen off when an external display is plugged in, if

@@ -34,7 +34,7 @@ Click the display icon in the menu bar:
 - **Reconnect All Displays** brings everything back.
 - **Settings…** (⌘,) has every option, each with a short description:
   - **Displays:** brightness sliders, Link Brightness, "Turn Off When a Monitor Connects" (the built-in screen always comes back when the last monitor is unplugged), and the keyboard backlight going off with the screen.
-  - **General:** launch at login, "Keep Displays Off After Restart", updates, and "Show in Dock" if you'd rather use Unplug as a regular app with a window. Control-click its Dock icon to turn displays off or on.
+  - **General:** launch at login, "Keep Displays Off" (after a restart and when a monitor is plugged back in), updates, and "Show in Dock" if you'd rather use Unplug as a regular app with a window. Control-click its Dock icon to turn displays off or on.
   - **Shortcuts:** change or turn off the keyboard shortcuts.
 - **Unplug Help** opens the help in macOS's help viewer, which you can also search from the Help menu.
 
@@ -48,7 +48,7 @@ Keyboard shortcuts work anywhere. These are the defaults, and you can change the
 ## If something goes wrong
 
 - Press **⌃⌥⌘U**, or quit Unplug. Quitting reconnects every display.
-- Logging out or restarting always brings every display back, unless you turned on "Keep Displays Off After Restart".
+- Logging out or restarting always brings every display back, unless you turned on "Keep Displays Off".
 - Unplug won't turn off your last working display.
 - If you unplug a display while it's turned off in Unplug, choose **Forget** under it in the menu.
 
