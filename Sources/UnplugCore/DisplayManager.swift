@@ -131,8 +131,8 @@ public final class DisplayManager {
         UnplugSettings.turnedOff.remove(display.uuid)
     }
 
-    /// Turns a display off again if it is online and on, for "Keep Displays Off
-    /// After Restart". Returns false when it isn't online yet or is the last
+    /// Turns a display off again if it is online and on, for "Keep Displays
+    /// Off". Returns false when it isn't online yet or is the last
     /// active display, so the caller can try again on the next display change.
     public func turnOffAgain(uuid: String) -> Bool {
         guard let display = Self.onlineDisplayIDs().compactMap(Display.current).first(where: { $0.uuid == uuid })

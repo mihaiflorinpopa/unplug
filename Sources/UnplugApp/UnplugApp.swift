@@ -80,7 +80,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         if model.reconnectOnQuit {
-            // Keep the user's choices, so "Keep Displays Off After Restart" still knows them.
+            // Keep the user's choices, so "Keep Displays Off" still knows them.
             DisplayManager().connectAll(keepChoices: true)
         }
     }

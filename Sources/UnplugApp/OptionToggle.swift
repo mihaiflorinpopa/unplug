@@ -43,8 +43,8 @@ struct Option {
         title: "Launch at Login",
         detail: "Opens Unplug when you log in.")
     static let keepOffAfterRestart = Option(
-        title: "Keep Displays Off After Restart",
-        detail: "Turns the displays you left off back off when Unplug opens at login. It never turns off your last screen.")
+        title: "Keep Displays Off",
+        detail: "Displays you turned off stay off after a restart and when they're plugged back in. It never turns off your last screen.")
     static let showInMenuBar = Option(
         title: "Show in Menu Bar",
         detail: "Shows Unplug's icon in the menu bar.")
