@@ -6,7 +6,7 @@ Unplug is a macOS menu bar app, with an `unplug` CLI inside it, that makes macOS
 
 - `swift test` runs the UnplugCore tests.
 - `./scripts/build-app.sh` builds `build/Unplug.app` (universal, ad-hoc signed). `./scripts/build-dmg.sh` also makes the .dmg.
-- To try a build, quit the installed Unplug first (two copies both react to displays and shortcuts), then `open build/Unplug.app`.
+- To try a build, quit the installed Unplug first (two copies both react to displays and shortcuts), then `open build/Unplug.app`. Don't turn on Launch at Login in a test build: macOS then opens that copy at login (`sfltool dumpbtm` shows the path). Turning it off and on again in the installed app fixes it.
 - Logs: `/usr/bin/log show --last 10m --predicate 'subsystem == "io.github.mihaiflorinpopa.unplug"'`. In zsh, plain `log` is a shell builtin. Debug lines, such as menu opens, only show in `log stream --level debug`.
 - Swift Build (the default build system from Swift 6.4, Xcode 27) records the deployment target (`sdk 14.0`) as the SDK version, so macOS would treat local builds like macOS 14. `build-app.sh` detects that and relinks with the real SDK (`-platform_version`, only when needed: Swift 6.3 passes the flag to clang, which rejects it), and fails if either binary records another SDK. CI checks it too.
 
@@ -38,7 +38,7 @@ Unplug is a macOS menu bar app, with an `unplug` CLI inside it, that makes macOS
 - The build number is the commit count.
 - Release notes, on GitHub and in the update dialog, come from pull request titles, so write them for users: what changes for them, in plain words. Label CI, build-script, docs-only and version-only pull requests `skip-release-notes` so `.github/release.yml` leaves them out. Dependabot labels its own `dependencies`.
 - Releases are immutable: once published, a release's assets and tag can't change. Fix a broken release with a new `VERSION`.
-- CI runs on a pinned `macos-26` runner (bump it by hand when GitHub retires it). Actions are pinned to commit SHAs, and Dependabot updates them and Sparkle.
+- CI runs on a pinned `xcode-27` runner (macOS 27; GitHub names newer macOS images by Xcode version). Bump it by hand to the next Xcode image. Actions are pinned to commit SHAs, and Dependabot updates them and Sparkle.
 
 ## Already decided
 
