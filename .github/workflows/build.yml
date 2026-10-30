@@ -22,7 +22,8 @@ jobs:
     # Branches in this repo build on push; pull requests only add a build for forks.
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     # Pinned so releases don't change Xcode and SDK when GitHub moves macos-latest.
-    runs-on: macos-26
+    # GitHub names newer images by Xcode version; this one runs macOS 27.
+    runs-on: xcode-27
     # A full build takes about 3 minutes; GitHub's default limit is 6 hours.
     timeout-minutes: 30
     outputs:
@@ -49,6 +50,12 @@ jobs:
           codesign --verify --deep --strict build/Unplug.app
           # macOS gives an app the behavior of the SDK it records, so it must be the one it was built with.
           xcrun vtool -show-build build/Unplug.app/Contents/MacOS/Unplug | grep " sdk $(xcrun --show-sdk-version)$"
+      - name: Check disk image
+        run: |
+          diskutil image attach --readOnly --nobrowse --mountPoint build/mnt build/Unplug-*.dmg
+          test -d build/mnt/Unplug.app
+          test -L build/mnt/Applications # drag-and-drop install
+          diskutil eject build/mnt
       - name: Smoke-test CLI
         run: |
           ./build/Unplug.app/Contents/Helpers/unplug help
@@ -92,7 +99,7 @@ jobs:
   release:
     needs: build
     if: needs.build.outputs.release-tag != ''
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 30
     # The Sparkle key lives in this environment, which only main can deploy to.
     environment: release
